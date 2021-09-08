@@ -274,7 +274,7 @@ export default {
             })
           },
           visible: instance => {
-            return instance.message.sendTime > (new Date().getTime() - 1000 * 60 * 2);
+            return instance.message.sendTime > (new Date().getTime() - 1000 * 60 * 2) && instance.message.fromUser.id == this.user.id;
           },
           color: "red",
           text: "撤销",
