@@ -78,13 +78,12 @@ public class UserService {
         contactsUser2.setContactsUserName("admin");
         contactsUser2.setTime(new Date());
         mongoTemplate.insert(contactsUser2);
-
         ContactsUser contactsUser3 = new ContactsUser();
         contactsUser3.setUserName("admingroup");
         contactsUser3.setContactsUserName(user.getUserName());
         contactsUser3.setTime(new Date());
         mongoTemplate.insert(contactsUser3);
-
+        msgService.editLookMsgRecord(user.getUserName(),"admingroup");
         ContactsUser contactsUser4 = new ContactsUser();
         contactsUser4.setUserName(user.getUserName());
         contactsUser4.setContactsUserName("admingroup");
@@ -410,6 +409,7 @@ public class UserService {
             mongoTemplate.insert(contactsUser2);
             noticeService.systemNotification(userId,"主人，【" + LoginUser.getNickName() + "】拉你进【 " + group.getNickName() + "】群了，快去查看吧！");
             noticeService.appendContact(userId,groupId);
+            msgService.editLookMsgRecord(userId,groupId);
         }
         return AjaxResult.success();
     }

@@ -8,6 +8,7 @@ import com.ct.myim.framework.distruptor.base.BaseEvent;
 import com.ct.myim.im.entity.FromUser;
 import com.ct.myim.im.entity.SocketMessage;
 import com.ct.myim.im.entity.SocketMsg;
+import com.ct.myim.im.handler.EditLookMsgHandler;
 import com.ct.myim.im.handler.GroupMsgHandler;
 import com.ct.myim.im.handler.PersonalMsgHandler;
 import com.lmax.disruptor.WorkHandler;
@@ -29,6 +30,8 @@ public class DisruptorServiceHandler implements WorkHandler<BaseEvent> {
 
     private GroupMsgHandler groupMsgHandler = SpringUtils.getBean(GroupMsgHandler.class);
 
+    private EditLookMsgHandler editLookMsgHandler = SpringUtils.getBean(EditLookMsgHandler.class);
+
     @Override
     public void onEvent(BaseEvent baseEvent)  {
         try {
@@ -44,6 +47,9 @@ public class DisruptorServiceHandler implements WorkHandler<BaseEvent> {
             }
             if(MsgType.GROUP_CHAT == sockeMsg.getHttpType()){
                 groupMsgHandler.send(sockeMsg);
+            }
+            if(MsgType.EDIT_LOOK_MSG_RECORD == sockeMsg.getHttpType()){
+                editLookMsgHandler.edit(sockeMsg);
             }
         } catch (Exception e) {
             logger.error("Disruptor事件执行异常", e);

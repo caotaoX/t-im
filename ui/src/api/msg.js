@@ -30,3 +30,4 @@ export function revokeMsg(data){
         params: data
     })
 }
+

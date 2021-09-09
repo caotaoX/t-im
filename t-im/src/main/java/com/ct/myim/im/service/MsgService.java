@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -50,20 +51,27 @@ public class MsgService {
      * @param toId
      * @return
      */
-    public int getMsgSize(String fromID, String toId) {
-        MsgDeleteCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(toId)
-                .and("contacts").is(fromID)), MsgDeleteCalipers.class);
-        Criteria criteria = Criteria.where("formUserName").is(fromID)
-                .and("toContactUserName").is(toId)
-                .and("msgType").is(MsgType.SEND_NO)
-                .and("deleteType").is(MsgType.DELETE_NO);
+    public int getMsgSize(String fromID, String toId, boolean isGroup) {
+        MsgLookCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(toId)
+                .and("contacts").is(fromID)), MsgLookCalipers.class);
+        Criteria criteria = new Criteria();
+        if (isGroup) {
+            criteria.andOperator(Criteria.where("formUserName").is(fromID)
+                    .and("deleteType").is(MsgType.DELETE_NO)
+                    .and("toContactUserName").ne(toId));
+
+        } else {
+            Criteria criteria2 = Criteria.where("formUserName").is(fromID)
+                    .and("toContactUserName").is(toId)
+                    .and("deleteType").is(MsgType.DELETE_NO);
+            criteria.andOperator(criteria2);
+        }
         if (calipers != null) {
             criteria.and("sendTime").gte(calipers.getTime());
         }
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(criteria),
                 Aggregation.project("formUserName")//指定输出文档中的字段
-
         );
         return mongoTemplate.aggregate(aggregation, SocketMsg.class, SocketMsg.class).getMappedResults().size();
     }
@@ -76,12 +84,18 @@ public class MsgService {
      * @param
      * @return
      */
-    public SocketMsg getMsgLastSendTimeOrLastContent(String fromID, String toId) {
+    public SocketMsg getMsgLastSendTimeOrLastContent(String fromID, String toId, boolean isGroup) {
         MsgDeleteCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(toId)
                 .and("contacts").is(fromID)), MsgDeleteCalipers.class);
-        Criteria criteria = Criteria.where("formUserName").is(fromID)
-                .and("toContactUserName").is(toId)
-                .and("deleteType").is(MsgType.DELETE_NO);
+        Criteria criteria = new Criteria();
+        if (isGroup) {
+            criteria.andOperator(Criteria.where("formUserName").is(fromID)
+                    .and("deleteType").is(MsgType.DELETE_NO));
+        } else {
+            criteria.andOperator(Criteria.where("formUserName").is(fromID)
+                    .and("toContactUserName").is(toId)
+                    .and("deleteType").is(MsgType.DELETE_NO));
+        }
         if (calipers != null) {
             criteria.and("sendTime").gte(calipers.getTime());
         }
@@ -106,7 +120,6 @@ public class MsgService {
         Query query = new Query();
         if (isGroup) {
             Criteria criteria = Criteria.where("formUserName").is(toId)
-                    .and("toContactUserName").is(fromID)
                     .and("deleteType").is(MsgType.DELETE_NO);
             if (calipers != null) {
                 criteria.and("sendTime").gte(calipers.getTime());
@@ -122,11 +135,11 @@ public class MsgService {
             criteria3.orOperator(criteria, criteria2);
             if (calipers != null) {
                 Criteria criteria4 = new Criteria();
-                criteria4.andOperator(criteria3,Criteria.where("sendTime").gte(calipers.getTime()).and("deleteType").is(MsgType.DELETE_NO));
+                criteria4.andOperator(criteria3, Criteria.where("sendTime").gte(calipers.getTime()).and("deleteType").is(MsgType.DELETE_NO));
                 query.collation(collation).addCriteria(criteria4);
-            }else{
+            } else {
                 Criteria criteria4 = new Criteria();
-                criteria4.andOperator(criteria3,Criteria.where("deleteType").is(MsgType.DELETE_NO));
+                criteria4.andOperator(criteria3, Criteria.where("deleteType").is(MsgType.DELETE_NO));
                 query.collation(collation).addCriteria(criteria4);
             }
         }
@@ -140,7 +153,6 @@ public class MsgService {
             }
             list.add(socketMsgList.get(i).getMessage());
         }
-        setMsgType(toId, fromID);
         return AjaxResult.success(list);
     }
 
@@ -168,15 +180,15 @@ public class MsgService {
             dict.set("index", user.getIndex());
             dict.set("isGroup", user.isGroup());
             if (user.isGroup()) {
-                dict.set("root",user.getRoot());
+                dict.set("root", user.getRoot());
             }
             if (!user.getUserName().equals("friendLog")) {
-                int i = getMsgSize(contactsUser.getContactsUserName(), userName);
+                int i = getMsgSize(contactsUser.getContactsUserName(), userName, user.isGroup());
                 dict.set("unread", i);
-                SocketMsg socketMsg = getMsgLastSendTimeOrLastContent(contactsUser.getContactsUserName(), userName);
+                SocketMsg socketMsg = getMsgLastSendTimeOrLastContent(contactsUser.getContactsUserName(), userName, user.isGroup());
                 if (socketMsg != null) {
                     dict.set("lastSendTime", socketMsg.getSendTime());
-                    dict.set("lastContent", socketMsg.getContent());
+                    dict.set("lastContent", socketMsg.getMessage().getContent());
                 }
             } else {
                 dict.set("unread", 0);
@@ -186,13 +198,6 @@ public class MsgService {
         return AjaxResult.success(data);
     }
 
-    public void setMsgType(String fromId, String toId) {
-        Criteria criteria = Criteria.where("formUserName").is(fromId)
-                .and("toContactUserName").is(toId).and("msgType").is(MsgType.SEND_NO);
-        Update update = new Update();
-        update.set("msgType", MsgType.SEND_OK);
-        mongoTemplate.updateMulti(new Query(criteria), update, SocketMsg.class);
-    }
 
     /**
      * 删除漫游记录
@@ -218,36 +223,59 @@ public class MsgService {
         return AjaxResult.success();
     }
 
-    public AjaxResult deleteMsg(String contactId,String msgId){
+    /**
+     * 修改消息查看记录
+     *
+     * @param userName 联系人或群userName
+     * @return
+     */
+    public void editLookMsgRecord(String userName,String contactId) {
+        User user = userService.getUserByuserName(userName);
+        MsgLookCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user.getUserName())
+                .and("contacts").is(contactId)), MsgLookCalipers.class);
+        if (calipers == null) {
+            MsgLookCalipers msgLookCalipers = new MsgLookCalipers();
+            msgLookCalipers.setUserName(user.getUserName());
+            msgLookCalipers.setContacts(contactId);
+            msgLookCalipers.setTime(LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
+            mongoTemplate.insert(msgLookCalipers);
+        } else {
+            Update update = new Update();
+            update.set("time", LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
+            mongoTemplate.updateFirst(new Query(Criteria.where("id").is(calipers.getId())), update, MsgLookCalipers.class);
+        }
+    }
+
+    public AjaxResult deleteMsg(String contactId, String msgId) {
         Update update = new Update();
         update.set("deleteType", MsgType.DELETE_YES);
-        mongoTemplate.updateMulti(new Query(Criteria.where("msgId").is(msgId)),update,SocketMsg.class);
+        mongoTemplate.updateMulti(new Query(Criteria.where("msgId").is(msgId)), update, SocketMsg.class);
         User LoginUser = tokenService.getLoginUser(ServletUtils.getRequest()).getUser();
         User user = userService.getUserByuserName(contactId);
-        if(user.isGroup()){
+        if (user.isGroup()) {
             List<ContactsUser> userList = mongoTemplate.find(new Query(Criteria.where("userName").is(LoginUser.getUserName())), ContactsUser.class);
             for (ContactsUser contactsUser : userList) {
-                noticeService.removeMessage(contactsUser.getContactsUserName(),msgId);
+                noticeService.removeMessage(contactsUser.getContactsUserName(), msgId);
             }
         } else {
-            noticeService.removeMessage(contactId,msgId);
+            noticeService.removeMessage(contactId, msgId);
         }
         return AjaxResult.success();
     }
 
-    public AjaxResult revokeMsg(String contactId,String msgId){
+    public AjaxResult revokeMsg(String contactId, String msgId) {
         Update update = new Update();
         update.set("deleteType", MsgType.DELETE_YES);
-        mongoTemplate.updateMulti(new Query(Criteria.where("msgId").is(msgId)),update,SocketMsg.class);
+        mongoTemplate.updateMulti(new Query(Criteria.where("msgId").is(msgId)), update, SocketMsg.class);
         User LoginUser = tokenService.getLoginUser(ServletUtils.getRequest()).getUser();
         User user = userService.getUserByuserName(contactId);
-        if(user.isGroup()){
+        if (user.isGroup()) {
             List<ContactsUser> userList = mongoTemplate.find(new Query(Criteria.where("userName").is(LoginUser.getUserName())), ContactsUser.class);
             for (ContactsUser contactsUser : userList) {
-                noticeService.removeMessage(contactsUser.getContactsUserName(),msgId);
+                noticeService.removeMessage(contactsUser.getContactsUserName(), msgId);
             }
         } else {
-            noticeService.removeMessage(contactId,msgId);
+            noticeService.removeMessage(contactId, msgId);
         }
         return AjaxResult.success();
     }

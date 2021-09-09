@@ -36,10 +36,6 @@ public class SocketMsg {
     private String toContactUserName;
 
 
-    /**
-     * 消息状态
-     */
-    private int msgType;
 
     /**
      * 消息删除状态
@@ -104,14 +100,6 @@ public class SocketMsg {
         this.toContactUserName = toContactUserName;
     }
 
-    public int getMsgType() {
-        return msgType;
-    }
-
-    public void setMsgType(int msgType) {
-        this.msgType = msgType;
-    }
-
     public int getDeleteType() {
         return deleteType;
     }
@@ -142,5 +130,20 @@ public class SocketMsg {
 
     public void setMessage(SocketMessage message) {
         this.message = message;
+    }
+
+    @Override
+    public String toString() {
+        return "SocketMsg{" +
+                "id='" + id + '\'' +
+                ", msgId='" + msgId + '\'' +
+                ", httpType=" + httpType +
+                ", formUserName='" + formUserName + '\'' +
+                ", toContactUserName='" + toContactUserName + '\'' +
+                ", deleteType=" + deleteType +
+                ", sendTime=" + sendTime +
+                ", content='" + content + '\'' +
+                ", message=" + message +
+                '}';
     }
 }

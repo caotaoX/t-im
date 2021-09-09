@@ -101,9 +101,9 @@ public class NoticeService {
                     SocketMsg socketMsg = new SocketMsg();
                     socketMsg.setId(IdUtils.fastSimpleUUID());
                     socketMsg.setHttpType(MsgType.UPDATE_USER);
-                    int i = msgService.getMsgSize(contactsUser.getContactsUserName(),user.getUserName());
+                    int i = msgService.getMsgSize(contactsUser.getContactsUserName(),user.getUserName(),user.isGroup());
                     dict.set("unread",i);
-                    SocketMsg socketMsgs = msgService.getMsgLastSendTimeOrLastContent(contactsUser.getContactsUserName(), user.getUserName());
+                    SocketMsg socketMsgs = msgService.getMsgLastSendTimeOrLastContent(contactsUser.getContactsUserName(), user.getUserName(),user.isGroup());
                     if(socketMsgs != null){
                         dict.set("lastSendTime",socketMsgs.getSendTime());
                         dict.set("lastContent",socketMsgs.getContent());
@@ -145,12 +145,8 @@ public class NoticeService {
         Channel channel = WsClientManager.getInstance().getChannel(toUserName);
         if(channel != null && channel.isActive()){
             WsClientManager.getInstance().sendMsg(socketMsg.getMessage().getToContactId(),JSON.toJSONString(socketMsg));
-            socketMsg.setMsgType(MsgType.SEND_OK);
-            mongoTemplate.insert(socketMsg);
-        }else{
-            socketMsg.setMsgType(MsgType.SEND_NO);
-            mongoTemplate.insert(socketMsg);
         }
+        mongoTemplate.insert(socketMsg);
     }
 
     /**

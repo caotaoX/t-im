@@ -435,15 +435,22 @@ export default {
     message: function (msg) {
       const {IMUI} = this.$refs;
       let data = JSON.parse(msg.data);
+      let contactId = IMUI.getCurrentContact().id
       if (data.httpType == constant.PRIVATE_CHAT) {
         let fromId = data.message.fromUser.id
         data.message.toContactId = fromId
         IMUI.appendMessage(data.message, true);
         this.notice()
+        if(contactId == data.message.fromUser.id){
+          this.editLookMsgRecord(contactId)
+        }
       }
       if (data.httpType == constant.GROUP_CHAT) {
         IMUI.appendMessage(data.message, true);
         this.notice()
+        if(contactId == data.message.toContactId){
+          this.editLookMsgRecord(contactId)
+        }
       }
       if (data.httpType == constant.UPDATE_USER) {
         let user = JSON.parse(data.content);
@@ -772,6 +779,7 @@ export default {
       this.$store.dispatch("SetContact", contact)
       this.IMUI.drawerVisible = false
       this.drawerVisibleShow = true
+      this.editLookMsgRecord(contact.id)
     },
     //申请浏览器通知权限，具体参见上面文档链接
     notification(){
@@ -790,13 +798,6 @@ export default {
       this.$store.dispatch("SetContact", contact)
       instance.changeDrawer({
         width: 300,
-        //height: "90%",
-        //offsetX:0 ,
-        //offsetY: ,
-        //position: "center",
-        // inside: true,
-        // offsetX: -280,
-        // offsetY: -100,
         render: () => {
           return (
               <CustomDrawer/>
@@ -804,6 +805,14 @@ export default {
         },
       });
     },
+    editLookMsgRecord(contactId){
+      let data = {
+        httpType: constant.EDIT_LOOK_MSG_RECORD,
+        formUserName: this.user.id,
+        toContactUserName: contactId
+      }
+      this.socketSend(data)
+    }
   }
 }
 </script>

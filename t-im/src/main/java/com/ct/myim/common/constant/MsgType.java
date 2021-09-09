@@ -81,6 +81,11 @@ public class MsgType {
      */
     public static final int NOTICE_REVOKE_MSG = 15;
 
+    /**
+     * 修改消息查看标识
+     */
+    public static final int EDIT_LOOK_MSG_RECORD = 16;
+
 
 
 }

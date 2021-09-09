@@ -22,6 +22,8 @@ export default {
     // 通知删除消息
     OTICE_DELETE_MSG: 14,
     // 通知撤销消息
-    NOTICE_REVOKE_MSG: 15
+    NOTICE_REVOKE_MSG: 15,
+    // 修改消息查看标识
+    EDIT_LOOK_MSG_RECORD: 16
 
 }
