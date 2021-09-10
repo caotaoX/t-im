@@ -21,7 +21,7 @@ public class PersonalMsgHandler {
     @Value("${file.download.abspath.prefix}")
     private String fileUrl;
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
 
 

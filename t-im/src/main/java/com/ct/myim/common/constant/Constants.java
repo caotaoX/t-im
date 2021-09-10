@@ -17,6 +17,11 @@ public class Constants
     public static final String LOGIN_TOKEN_KEY = "im_tokens:";
 
     /**
+     * 用户缓存
+     */
+    public static final String USER_CACHE = "user_cache:";
+
+    /**
      * 令牌前缀
      */
     public static final String TOKEN_PREFIX = "Bearer ";

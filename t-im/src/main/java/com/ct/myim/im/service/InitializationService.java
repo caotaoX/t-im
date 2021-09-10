@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import sun.misc.BASE64Decoder;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,11 +32,14 @@ public class InitializationService {
     @Value("${file.upload.abspath.prefix}")
     private String fileUploadPath;
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
 
-    @Autowired
+    @Resource
     private StartServer startServer;
+
+    @Resource
+    private UserService userService;
 
     @PostConstruct
     public void startWebSocket() {
@@ -48,7 +52,7 @@ public class InitializationService {
 
     @PostConstruct
     public void initializationAdminUserOrGroup(){
-        User user = mongoTemplate.findOne(new Query(Criteria.where("userName").is("admin")), User.class);
+        User user = userService.getUserByuserName("admin");
         if(user == null){
             User user1 = new User();
             user1.setId(IdUtils.fastSimpleUUID());
@@ -60,8 +64,7 @@ public class InitializationService {
             user1.setIndex("[3]系统通知");
             mongoTemplate.insert(user1);
         }
-
-        User friendLog = mongoTemplate.findOne(new Query(Criteria.where("userName").is("friendLog")), User.class);
+        User friendLog = userService.getUserByuserName("friendLog");
         if(friendLog == null){
             User friend = new User();
             friend.setId(IdUtils.fastSimpleUUID());
@@ -73,8 +76,7 @@ public class InitializationService {
             friend.setIndex("[1]新的朋友");
             mongoTemplate.insert(friend);
         }
-
-        User group1 = mongoTemplate.findOne(new Query(Criteria.where("userName").is("admingroup")), User.class);
+        User group1 = userService.getUserByuserName("admingroup");
         if(group1 == null){
             User group = new User();
             group.setId(IdUtils.fastSimpleUUID());

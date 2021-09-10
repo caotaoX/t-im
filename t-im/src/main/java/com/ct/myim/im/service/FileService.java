@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import sun.misc.BASE64Decoder;
 
+import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -32,7 +33,7 @@ public class FileService {
     @Value("${file.upload.abspath.prefix}")
     private String FileUploadPath;
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
 
     public AjaxResult addFile(MultipartFile file) {

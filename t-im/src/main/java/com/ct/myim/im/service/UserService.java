@@ -4,36 +4,29 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.pinyin.PinyinUtil;
-import com.alibaba.fastjson.JSON;
 import com.ct.myim.common.constant.Constants;
 import com.ct.myim.common.constant.MsgType;
-import com.ct.myim.common.utils.DateUtils;
 import com.ct.myim.common.utils.IdUtils;
 import com.ct.myim.common.utils.PasswordUtils;
 import com.ct.myim.common.utils.ServletUtils;
 import com.ct.myim.framework.redis.TokenService;
 import com.ct.myim.framework.web.entity.AjaxResult;
-import com.ct.myim.framework.web.entity.LoginUser;
+import com.ct.myim.im.cache.UserCache;
 import com.ct.myim.im.entity.*;
-import com.ct.myim.sockent.manager.WsClientManager;
 import com.mongodb.client.result.UpdateResult;
-import io.netty.channel.Channel;
-import org.apache.tomcat.PeriodicEventListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 @Service
@@ -42,20 +35,20 @@ public class UserService {
     @Value("${file.download.abspath.prefix}")
     private String fileUrl;
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
-    @Autowired
+    @Resource
     private TokenService tokenService;
-    @Autowired
-    private UserService userService;
-    @Autowired
+    @Resource
     private MsgService msgService;
-    @Autowired
+    @Resource
     private NoticeService noticeService;
+    @Resource
+    private UserCache userCache;
 
     public AjaxResult registerUser(User user) {
-        List<User> list = mongoTemplate.find(new Query(Criteria.where("userName").is(user.getUserName())), User.class);
-        if (list != null && list.size() > 0) {
+        User userK = getUserByuserName(user.getUserName());
+        if (userK != null) {
             return AjaxResult.error("注册账号已存在！");
         }
         user.setId(IdUtils.fastSimpleUUID());
@@ -112,7 +105,7 @@ public class UserService {
      * @return
      */
     public User getUserByuserName(String userName) {
-        User user = mongoTemplate.findOne(new Query(Criteria.where("userName").is(userName)), User.class);
+        User user = userCache.getUserCache(userName);
         if (user != null) {
             user.setAvatar(fileUrl + user.getAvatar());
         }
@@ -134,6 +127,8 @@ public class UserService {
         if (b.getModifiedCount() > 0) {
             noticeService.updateContact(user.getUserName());
         }
+        user = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user.getUserName())), User.class);
+        userCache.setUserCache(user);
         return AjaxResult.success();
     }
 
@@ -144,8 +139,7 @@ public class UserService {
         }
         User user = mongoTemplate.findOne(new Query(Criteria.where("userName").is(userName).and("isGroup").is(false)), User.class);
         if (user != null) {
-            User user1 = tokenService.getLoginUser(ServletUtils.getRequest()).getUser();
-            ContactsUser contactsUsers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user1.getUserName()).and("contactsUserName").is(user.getUserName())), ContactsUser.class);
+            ContactsUser contactsUsers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(LoginUser.getUserName()).and("contactsUserName").is(user.getUserName())), ContactsUser.class);
             if (contactsUsers == null) {
                 user.setAvatar(fileUrl + user.getAvatar());
                 user.setPassword("");
@@ -185,7 +179,7 @@ public class UserService {
         for (SocketAddUser socketAddUser : list) {
             Dict dict = new Dict();
             dict.set("id", socketAddUser.getId());
-            User user = mongoTemplate.findOne(new Query(Criteria.where("userName").is(socketAddUser.getFromUserName())), User.class);
+            User user = getUserByuserName(socketAddUser.getFromUserName());
             dict.set("url", fileUrl + user.getAvatar());
             dict.set("name", user.getNickName());
             dict.set("explain", socketAddUser.getExplain());
@@ -257,12 +251,13 @@ public class UserService {
         if (count > 0) {
             noticeService.removeContact(userName, LoginUser.getUserName());
         }
+        userCache.deleteUserCache(userName);
         return AjaxResult.success();
     }
 
     public AjaxResult registerGroup(User user) {
-        List<User> list = mongoTemplate.find(new Query(Criteria.where("userName").is(user.getUserName())), User.class);
-        if (list != null && list.size() > 0) {
+        User userK = getUserByuserName(user.getUserName());
+        if (userK != null) {
             return AjaxResult.error("群账号已存在！");
         }
         User LoginUser = tokenService.getLoginUser(ServletUtils.getRequest()).getUser();
@@ -327,6 +322,8 @@ public class UserService {
             noticeService.appendContact(LoginUser.getUserName(), user.getUserName());
             return AjaxResult.success();
         }
+        user = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user.getUserName())), User.class);
+        userCache.setUserCache(user);
         return AjaxResult.error();
     }
 

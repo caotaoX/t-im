@@ -8,6 +8,7 @@ import com.ct.myim.framework.distruptor.base.MessageProducer;
 import com.ct.myim.im.entity.ContactsUser;
 import com.ct.myim.im.entity.SocketMsg;
 import com.ct.myim.im.entity.User;
+import com.ct.myim.im.service.UserService;
 import com.ct.myim.sockent.manager.WsClientManager;
 import io.netty.channel.Channel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +27,13 @@ public class GroupMsgHandler {
     @Value("${file.download.abspath.prefix}")
     private String fileUrl;
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
+
+    @Resource
+    private UserService userService;
+
+
 
     public void send(SocketMsg sockeMsg) {
         List<ContactsUser> userList = mongoTemplate.find(new Query(Criteria.where("userName").is(sockeMsg.getMessage().getToContactId())), ContactsUser.class);
@@ -40,7 +46,7 @@ public class GroupMsgHandler {
         sockeMsg.setId(IdUtils.fastSimpleUUID());
         mongoTemplate.insert(sockeMsg);
         for (ContactsUser contactsUser : userList) {
-            User user = mongoTemplate.findOne(new Query(Criteria.where("userName").is(contactsUser.getContactsUserName())), User.class);
+            User user = userService.getUserByuserName(contactsUser.getContactsUserName());
             Channel channel = WsClientManager.getInstance().getChannel(user.getUserName());
             if (channel != null && channel.isActive()) {
                 String fileId = sockeMsg.getMessage().getContent();

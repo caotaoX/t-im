@@ -8,13 +8,13 @@ import com.ct.myim.framework.redis.TokenService;
 import com.ct.myim.im.entity.*;
 import com.ct.myim.sockent.manager.WsClientManager;
 import io.netty.channel.Channel;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 
@@ -27,13 +27,13 @@ public class NoticeService {
     @Value("${file.download.abspath.prefix}")
     private String fileUrl;
 
-    @Autowired
-    private MongoTemplate mongoTemplate;
-    @Autowired
-    private TokenService tokenService;
-    @Autowired
+    @Resource
     private UserService userService;
-    @Autowired
+    @Resource
+    private MongoTemplate mongoTemplate;
+    @Resource
+    private TokenService tokenService;
+    @Resource
     private MsgService msgService;
 
 
@@ -134,7 +134,7 @@ public class NoticeService {
         message.setStatus("succeed");
         message.setType("text");
         message.setToContactId(socketMsg.getToContactUserName());
-        User adminUser = mongoTemplate.findOne(new Query(Criteria.where("userName").is("admin")), User.class);
+        User adminUser = userService.getUserByuserName("admin");
         FromUser fromUser = new FromUser();
         fromUser.setId("admin");
         fromUser.setAvatar(fileUrl + adminUser.getAvatar());

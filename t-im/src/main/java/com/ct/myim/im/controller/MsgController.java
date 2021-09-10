@@ -17,7 +17,7 @@ import javax.annotation.Resource;
 @RestController
 @RequestMapping("msg")
 public class MsgController {
-    @Autowired
+    @Resource
     private MsgService msgService;
     @Resource
     private MessageProducer messageProducer ;

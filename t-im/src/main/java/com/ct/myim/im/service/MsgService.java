@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -32,16 +33,16 @@ public class MsgService {
     @Value("${file.download.abspath.prefix}")
     private String fileUrl;
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
 
-    @Autowired
+    @Resource
     private UserService userService;
 
-    @Autowired
+    @Resource
     private TokenService tokenService;
 
-    @Autowired
+    @Resource
     private NoticeService noticeService;
 
     /**

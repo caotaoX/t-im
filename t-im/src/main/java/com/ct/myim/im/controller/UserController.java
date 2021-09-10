@@ -8,10 +8,12 @@ import com.ct.myim.im.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
+
 @RestController
 @RequestMapping("user")
 public class UserController extends BaseController {
-    @Autowired
+    @Resource
     private UserService userService;
 
     /**

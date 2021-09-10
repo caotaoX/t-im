@@ -8,29 +8,30 @@ import com.ct.myim.framework.redis.TokenService;
 import com.ct.myim.framework.web.entity.AjaxResult;
 import com.ct.myim.framework.web.entity.LoginUser;
 import com.ct.myim.im.entity.User;
-import com.ct.myim.sockent.manager.WsClientManager;
-import io.netty.channel.Channel;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.Date;
 
 @Service
 public class LoginService {
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
-    @Autowired
+    @Resource
     private TokenService tokenService;
-    @Autowired
+    @Resource
     private NoticeService noticeService;
 
+    @Resource
+    private UserService userService;
+
     public AjaxResult login(User user){
-        User one = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user.getUserName())), User.class);
+        User one = userService.getUserByuserName(user.getUserName());
         if(one == null || one.getUserName().equals("friendLog") || one.isGroup()){
             return AjaxResult.error("账号不存在！");
         }
