@@ -82,7 +82,7 @@ public class UserService {
         contactsUser3.setContactsUserName(user.getUserName());
         contactsUser3.setTime(new Date());
         mongoTemplate.insert(contactsUser3);
-        contactsUserCache.refresh("admingroup");
+        contactsUserCache.deleteContactsUserCache("admingroup");
         msgLookCalipersCache.setMsgLookCalipersCache(user.getUserName(),"admingroup");
         ContactsUser contactsUser4 = new ContactsUser();
         contactsUser4.setUserName(user.getUserName());
@@ -95,15 +95,14 @@ public class UserService {
         contactsUser5.setContactsUserName(user.getUserName());
         contactsUser5.setTime(new Date());
         mongoTemplate.insert(contactsUser5);
-        contactsUserCache.refresh("friendLog");
+        contactsUserCache.deleteContactsUserCache("friendLog");
 
         ContactsUser contactsUser6 = new ContactsUser();
         contactsUser6.setUserName(user.getUserName());
         contactsUser6.setContactsUserName("friendLog");
         contactsUser6.setTime(new Date());
         mongoTemplate.insert(contactsUser6);
-
-        contactsUserCache.refresh(user.getUserName());
+        contactsUserCache.deleteContactsUserCache(user.getUserName());
 
         return AjaxResult.success("注册成功");
     }
@@ -217,8 +216,8 @@ public class UserService {
             contactsUser2.setTime(new Date());
             mongoTemplate.insert(contactsUser2);
             //通知被添加人
-            contactsUserCache.refresh(socketAddUsers.getToUserName());
-            contactsUserCache.refresh(socketAddUsers.getFromUserName());
+            contactsUserCache.deleteContactsUserCache(socketAddUsers.getToUserName());
+            contactsUserCache.deleteContactsUserCache(socketAddUsers.getFromUserName());
 
             noticeService.systemNotification(socketAddUsers.getFromUserName(), "主人，【" + LoginUser.getNickName() + "】同意你为好友了，快去查看吧！");
             noticeService.appendContact(socketAddUsers.getToUserName(), socketAddUsers.getFromUserName());
@@ -264,9 +263,8 @@ public class UserService {
         if (count > 0) {
             noticeService.removeContact(userName, LoginUser.getUserName());
         }
-        userCache.deleteUserCache(userName);
-        contactsUserCache.refresh(userName);
-        contactsUserCache.refresh(LoginUser.getUserName());
+        contactsUserCache.deleteContactsUserCache(userName);
+        contactsUserCache.deleteContactsUserCache(LoginUser.getUserName());
 
         return AjaxResult.success();
     }
@@ -293,8 +291,8 @@ public class UserService {
         contactsUser2.setContactsUserName(user.getUserName());
         contactsUser2.setTime(new Date());
         mongoTemplate.insert(contactsUser2);
-        contactsUserCache.refresh(LoginUser.getUserName());
-        contactsUserCache.refresh(user.getUserName());
+        contactsUserCache.deleteContactsUserCache(LoginUser.getUserName());
+        contactsUserCache.deleteContactsUserCache(user.getUserName());
         noticeService.appendContact(LoginUser.getUserName(), user.getUserName());
         return AjaxResult.success();
     }
@@ -366,8 +364,8 @@ public class UserService {
         query.addCriteria(criteria3);
         long count = mongoTemplate.remove(query, ContactsUser.class).getDeletedCount();
         if (count > 0) {
-            contactsUserCache.refresh(groupId);
-            contactsUserCache.refresh(userId);
+            contactsUserCache.deleteContactsUserCache(groupId);
+            contactsUserCache.deleteContactsUserCache(userId);
             noticeService.systemNotification(userId,"主人，【" + LoginUser.getNickName() + "】将你从【" + user.getNickName() + "】群移除了！" );
             return AjaxResult.success();
         }
@@ -428,8 +426,8 @@ public class UserService {
             noticeService.systemNotification(userId,"主人，【" + LoginUser.getNickName() + "】拉你进【 " + group.getNickName() + "】群了，快去查看吧！");
             noticeService.appendContact(userId,groupId);
             msgLookCalipersCache.setMsgLookCalipersCache(userId,groupId);
-            contactsUserCache.refresh(userId);
-            contactsUserCache.refresh(groupId);
+            contactsUserCache.deleteContactsUserCache(userId);
+            contactsUserCache.deleteContactsUserCache(groupId);
         }
         return AjaxResult.success();
     }
