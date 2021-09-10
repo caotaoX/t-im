@@ -5,6 +5,7 @@ import cn.hutool.extra.pinyin.PinyinUtil;
 import com.ct.myim.common.constant.Constants;
 import com.ct.myim.common.utils.IdUtils;
 import com.ct.myim.common.utils.PasswordUtils;
+import com.ct.myim.im.cache.ContactsUserCache;
 import com.ct.myim.im.entity.ContactsUser;
 import com.ct.myim.im.entity.SocketFile;
 import com.ct.myim.im.entity.User;
@@ -40,6 +41,7 @@ public class InitializationService {
 
     @Resource
     private UserService userService;
+
 
     @PostConstruct
     public void startWebSocket() {

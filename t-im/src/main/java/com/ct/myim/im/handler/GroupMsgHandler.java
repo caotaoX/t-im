@@ -38,7 +38,6 @@ public class GroupMsgHandler {
     private ContactsUserCache contactsUserCache;
 
 
-
     public void send(SocketMsg sockeMsg) {
         List<ContactsUser> userList = contactsUserCache.getContactsUserCache(sockeMsg.getMessage().getToContactId());
         sockeMsg.setSendTime(sockeMsg.getMessage().getSendTime());
