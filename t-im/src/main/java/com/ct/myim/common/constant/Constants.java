@@ -1,7 +1,6 @@
 package com.ct.myim.common.constant;
 
 
-import com.ct.myim.common.utils.IdUtils;
 
 /**
  * 通用常量信息
@@ -20,6 +19,22 @@ public class Constants
      * 用户缓存
      */
     public static final String USER_CACHE = "user_cache:";
+
+    /**
+     * 用户联系人缓存
+     */
+    public static final String CONTACTS_USER_CACHE = "contacts_user_cache:";
+
+    /**
+     * 用户删除漫游消息缓存
+     */
+    public static final String MSG_DELETE_CALIPERS_CACHE = "msg_delete_calipers_cache:";
+
+    /**
+     * 用户查看消息缓存
+     */
+    public static final String MSG_LOOK_CALIPERS_CACHE = "msg_look_calipers_cache:";
+
 
     /**
      * 令牌前缀

@@ -11,6 +11,7 @@ import com.ct.myim.common.utils.PasswordUtils;
 import com.ct.myim.common.utils.ServletUtils;
 import com.ct.myim.framework.redis.TokenService;
 import com.ct.myim.framework.web.entity.AjaxResult;
+import com.ct.myim.im.cache.MsgLookCalipersCache;
 import com.ct.myim.im.cache.UserCache;
 import com.ct.myim.im.entity.*;
 import com.mongodb.client.result.UpdateResult;
@@ -45,6 +46,8 @@ public class UserService {
     private NoticeService noticeService;
     @Resource
     private UserCache userCache;
+    @Resource
+    private MsgLookCalipersCache msgLookCalipersCache;
 
     public AjaxResult registerUser(User user) {
         User userK = getUserByuserName(user.getUserName());
@@ -76,7 +79,7 @@ public class UserService {
         contactsUser3.setContactsUserName(user.getUserName());
         contactsUser3.setTime(new Date());
         mongoTemplate.insert(contactsUser3);
-        msgService.editLookMsgRecord(user.getUserName(),"admingroup");
+        msgLookCalipersCache.setMsgLookCalipersCache(user.getUserName(),"admingroup");
         ContactsUser contactsUser4 = new ContactsUser();
         contactsUser4.setUserName(user.getUserName());
         contactsUser4.setContactsUserName("admingroup");
@@ -406,7 +409,7 @@ public class UserService {
             mongoTemplate.insert(contactsUser2);
             noticeService.systemNotification(userId,"主人，【" + LoginUser.getNickName() + "】拉你进【 " + group.getNickName() + "】群了，快去查看吧！");
             noticeService.appendContact(userId,groupId);
-            msgService.editLookMsgRecord(userId,groupId);
+            msgLookCalipersCache.setMsgLookCalipersCache(userId,groupId);
         }
         return AjaxResult.success();
     }

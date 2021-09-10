@@ -6,6 +6,9 @@ import com.ct.myim.common.constant.MsgType;
 import com.ct.myim.common.utils.ServletUtils;
 import com.ct.myim.framework.redis.TokenService;
 import com.ct.myim.framework.web.entity.AjaxResult;
+import com.ct.myim.im.cache.ContactsUserCache;
+import com.ct.myim.im.cache.MsgDeleteCalipersCache;
+import com.ct.myim.im.cache.MsgLookCalipersCache;
 import com.ct.myim.im.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +48,13 @@ public class MsgService {
     @Resource
     private NoticeService noticeService;
 
+    @Resource
+    private ContactsUserCache contactsUserCache;
+    @Resource
+    private MsgDeleteCalipersCache msgDeleteCalipersCache;
+    @Resource
+    private MsgLookCalipersCache msgLookCalipersCache;
+
     /**
      * 获取未读消息条数
      *
@@ -53,8 +63,7 @@ public class MsgService {
      * @return
      */
     public int getMsgSize(String fromID, String toId, boolean isGroup) {
-        MsgLookCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(toId)
-                .and("contacts").is(fromID)), MsgLookCalipers.class);
+        MsgLookCalipers calipers = msgLookCalipersCache.getMsgLookCalipersCache(toId,fromID);
         Criteria criteria = new Criteria();
         if (isGroup) {
             criteria.andOperator(Criteria.where("formUserName").is(fromID)
@@ -86,8 +95,7 @@ public class MsgService {
      * @return
      */
     public SocketMsg getMsgLastSendTimeOrLastContent(String fromID, String toId, boolean isGroup) {
-        MsgDeleteCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(toId)
-                .and("contacts").is(fromID)), MsgDeleteCalipers.class);
+        MsgDeleteCalipers calipers = msgDeleteCalipersCache.getMsgDeleteCalipersCache(toId,fromID);
         Criteria criteria = new Criteria();
         if (isGroup) {
             criteria.andOperator(Criteria.where("formUserName").is(fromID)
@@ -116,8 +124,7 @@ public class MsgService {
     }
 
     public AjaxResult getMsgList(Integer pageSize, String fromID, String toId, boolean isGroup) {
-        MsgDeleteCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(fromID)
-                .and("contacts").is(toId)), MsgDeleteCalipers.class);
+        MsgDeleteCalipers calipers = msgDeleteCalipersCache.getMsgDeleteCalipersCache(fromID,toId);
         Query query = new Query();
         if (isGroup) {
             Criteria criteria = Criteria.where("formUserName").is(toId)
@@ -159,22 +166,14 @@ public class MsgService {
 
 
     public AjaxResult getContactsList(String userName, String searchValue) {
-        Query query = new Query();
-        if (StrUtil.isNotBlank(searchValue)) {
-            Criteria criteria3 = new Criteria();
-            Pattern pattern = Pattern.compile("^.*" + searchValue + ".*$", Pattern.CASE_INSENSITIVE);
-            Criteria criteria = Criteria.where("userName").regex(pattern);
-            Criteria criteria2 = Criteria.where("nickName").regex(pattern);
-            criteria3.orOperator(criteria, criteria2);
-            query.addCriteria(criteria3);
-        } else {
-            query.addCriteria(Criteria.where("userName").is(userName));
-        }
-        List<ContactsUser> list = mongoTemplate.find(new Query(Criteria.where("userName").is(userName)), ContactsUser.class);
+        List<ContactsUser> list = contactsUserCache.getContactsUserCache(userName);
         List<Dict> data = new ArrayList<>();
         for (ContactsUser contactsUser : list) {
-            Dict dict = new Dict();
             User user = userService.getUserByuserName(contactsUser.getContactsUserName());
+            if(user.getUserName().indexOf(searchValue) == -1 && user.getNickName().indexOf(searchValue) == -1){
+                continue;
+            }
+            Dict dict = new Dict();
             dict.set("id", user.getUserName());
             dict.set("displayName", user.getNickName());
             dict.set("avatar", user.getAvatar());
@@ -208,8 +207,7 @@ public class MsgService {
      */
     public AjaxResult deleteRoamingRecord(String userName) {
         User LoginUser = tokenService.getLoginUser(ServletUtils.getRequest()).getUser();
-        MsgDeleteCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(LoginUser.getUserName())
-                .and("contacts").is(userName)), MsgDeleteCalipers.class);
+        MsgDeleteCalipers calipers = msgDeleteCalipersCache.getMsgDeleteCalipersCache(LoginUser.getUserName(),userName);
         if (calipers == null) {
             MsgDeleteCalipers msgDeleteCalipers = new MsgDeleteCalipers();
             msgDeleteCalipers.setUserName(LoginUser.getUserName());
@@ -221,6 +219,7 @@ public class MsgService {
             update.set("time", LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
             mongoTemplate.updateFirst(new Query(Criteria.where("id").is(calipers.getId())), update, MsgDeleteCalipers.class);
         }
+        msgDeleteCalipersCache.setMsgDeleteCalipersCache(LoginUser.getUserName(),userName);
         return AjaxResult.success();
     }
 
@@ -230,22 +229,22 @@ public class MsgService {
      * @param userName 联系人或群userName
      * @return
      */
-    public void editLookMsgRecord(String userName,String contactId) {
-        User user = userService.getUserByuserName(userName);
-        MsgLookCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user.getUserName())
-                .and("contacts").is(contactId)), MsgLookCalipers.class);
-        if (calipers == null) {
-            MsgLookCalipers msgLookCalipers = new MsgLookCalipers();
-            msgLookCalipers.setUserName(user.getUserName());
-            msgLookCalipers.setContacts(contactId);
-            msgLookCalipers.setTime(LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
-            mongoTemplate.insert(msgLookCalipers);
-        } else {
-            Update update = new Update();
-            update.set("time", LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
-            mongoTemplate.updateFirst(new Query(Criteria.where("id").is(calipers.getId())), update, MsgLookCalipers.class);
-        }
-    }
+//    public void editLookMsgRecord(String userName,String contactId) {
+////        User user = userService.getUserByuserName(userName);
+////        MsgLookCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user.getUserName())
+////                .and("contacts").is(contactId)), MsgLookCalipers.class);
+////        if (calipers == null) {
+////            MsgLookCalipers msgLookCalipers = new MsgLookCalipers();
+////            msgLookCalipers.setUserName(user.getUserName());
+////            msgLookCalipers.setContacts(contactId);
+////            msgLookCalipers.setTime(LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
+////            mongoTemplate.insert(msgLookCalipers);
+////        } else {
+////            Update update = new Update();
+////            update.set("time", LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
+////            mongoTemplate.updateFirst(new Query(Criteria.where("id").is(calipers.getId())), update, MsgLookCalipers.class);
+////        }
+//    }
 
     public AjaxResult deleteMsg(String contactId, String msgId) {
         Update update = new Update();
@@ -254,7 +253,7 @@ public class MsgService {
         User LoginUser = tokenService.getLoginUser(ServletUtils.getRequest()).getUser();
         User user = userService.getUserByuserName(contactId);
         if (user.isGroup()) {
-            List<ContactsUser> userList = mongoTemplate.find(new Query(Criteria.where("userName").is(LoginUser.getUserName())), ContactsUser.class);
+            List<ContactsUser> userList = contactsUserCache.getContactsUserCache(LoginUser.getUserName());
             for (ContactsUser contactsUser : userList) {
                 noticeService.removeMessage(contactsUser.getContactsUserName(), msgId);
             }
@@ -271,7 +270,7 @@ public class MsgService {
         User LoginUser = tokenService.getLoginUser(ServletUtils.getRequest()).getUser();
         User user = userService.getUserByuserName(contactId);
         if (user.isGroup()) {
-            List<ContactsUser> userList = mongoTemplate.find(new Query(Criteria.where("userName").is(LoginUser.getUserName())), ContactsUser.class);
+            List<ContactsUser> userList = contactsUserCache.getContactsUserCache(LoginUser.getUserName());
             for (ContactsUser contactsUser : userList) {
                 noticeService.removeMessage(contactsUser.getContactsUserName(), msgId);
             }

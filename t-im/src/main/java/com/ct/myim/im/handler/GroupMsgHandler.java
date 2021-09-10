@@ -5,6 +5,7 @@ import com.ct.myim.common.constant.MsgType;
 import com.ct.myim.common.utils.IdUtils;
 import com.ct.myim.framework.distruptor.base.BaseEvent;
 import com.ct.myim.framework.distruptor.base.MessageProducer;
+import com.ct.myim.im.cache.ContactsUserCache;
 import com.ct.myim.im.entity.ContactsUser;
 import com.ct.myim.im.entity.SocketMsg;
 import com.ct.myim.im.entity.User;
@@ -33,10 +34,13 @@ public class GroupMsgHandler {
     @Resource
     private UserService userService;
 
+    @Resource
+    private ContactsUserCache contactsUserCache;
+
 
 
     public void send(SocketMsg sockeMsg) {
-        List<ContactsUser> userList = mongoTemplate.find(new Query(Criteria.where("userName").is(sockeMsg.getMessage().getToContactId())), ContactsUser.class);
+        List<ContactsUser> userList = contactsUserCache.getContactsUserCache(sockeMsg.getMessage().getToContactId());
         sockeMsg.setSendTime(sockeMsg.getMessage().getSendTime());
         sockeMsg.setHttpType(sockeMsg.getHttpType());
         sockeMsg.setFormUserName(sockeMsg.getMessage().getToContactId());

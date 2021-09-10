@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.ct.myim.common.constant.MsgType;
 import com.ct.myim.common.utils.IdUtils;
 import com.ct.myim.framework.redis.TokenService;
+import com.ct.myim.im.cache.ContactsUserCache;
 import com.ct.myim.im.entity.*;
 import com.ct.myim.sockent.manager.WsClientManager;
 import io.netty.channel.Channel;
@@ -35,6 +36,8 @@ public class NoticeService {
     private TokenService tokenService;
     @Resource
     private MsgService msgService;
+    @Resource
+    private ContactsUserCache contactsUserCache;
 
 
     /**
@@ -94,7 +97,7 @@ public class NoticeService {
                 dict.set("isGroup",user.isGroup());
                 dict.set("root",user.getRoot());
             }
-            List<ContactsUser> list = mongoTemplate.find(new Query(Criteria.where("userName").is(user.getUserName())), ContactsUser.class);
+            List<ContactsUser> list = contactsUserCache.getContactsUserCache(user.getUserName());
             for (ContactsUser contactsUser : list) {
                 Channel channel = WsClientManager.getInstance().getChannel(contactsUser.getContactsUserName());
                 if(channel != null && channel.isActive()){
