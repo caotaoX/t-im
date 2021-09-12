@@ -1,6 +1,9 @@
 # t-im
      前后端分离的仿微信web im 在线聊天系统
 
+github: https://github.com/caotaoX/t-im <br>
+gitee:  https://gitee.com/ct_1466909669/t-im <br>
+
 后端： spring boot , Hutool , netty , disruptor 等 <br>
 前端:  vue , axios, element-ui, lemon-imui <br>
 - 前端最重要用到了 fanjyy 大佬开源的 lemon-imui 组件
