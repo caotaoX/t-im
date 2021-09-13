@@ -36,8 +36,8 @@ public class UserCache {
             return user;
         }catch (Exception e){
             e.printStackTrace();
+            return getUser(userName);
         }
-        return null;
     }
 
     public void deleteUserCache(String userName){
@@ -46,5 +46,9 @@ public class UserCache {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private User getUser(String userName){
+        return redisCache.getCacheObject(Constants.USER_CACHE + userName);
     }
 }

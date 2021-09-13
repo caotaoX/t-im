@@ -39,8 +39,8 @@ public class ContactsUserCache {
             return list;
         }catch (Exception e){
             e.printStackTrace();
+            return getContactsUserList(userName);
         }
-        return null;
     }
 
     public void deleteContactsUserCache(String userName){
@@ -61,5 +61,9 @@ public class ContactsUserCache {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private List<ContactsUser> getContactsUserList(String userName){
+        return  mongoTemplate.find(new Query(Criteria.where("userName").is(userName)), ContactsUser.class);
     }
  }

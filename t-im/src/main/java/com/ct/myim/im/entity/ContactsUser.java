@@ -7,7 +7,7 @@ import java.util.Date;
 /**
  *联系人表
  */
-@Document(value = "sys_contacts_user" )
+@Document(value = "im_sys_contacts_user" )
 public class ContactsUser {
     /**
      *用户账号

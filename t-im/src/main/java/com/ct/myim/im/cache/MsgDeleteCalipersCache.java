@@ -2,6 +2,7 @@ package com.ct.myim.im.cache;
 
 import com.ct.myim.common.constant.Constants;
 import com.ct.myim.framework.redis.RedisCache;
+import com.ct.myim.im.entity.ContactsUser;
 import com.ct.myim.im.entity.MsgDeleteCalipers;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -9,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,15 +29,20 @@ public class MsgDeleteCalipersCache {
     }
 
     public MsgDeleteCalipers getMsgDeleteCalipersCache(String fromId,String toId){
-        MsgDeleteCalipers msgDeleteCalipers = redisCache.getCacheObject(Constants.MSG_DELETE_CALIPERS_CACHE + fromId + ":" + toId);
-        if(msgDeleteCalipers == null){
-            msgDeleteCalipers = refresh(fromId,toId);
+        try {
+            MsgDeleteCalipers msgDeleteCalipers = redisCache.getCacheObject(Constants.MSG_DELETE_CALIPERS_CACHE + fromId + ":" + toId);
+            if(msgDeleteCalipers == null){
+                msgDeleteCalipers = refresh(fromId,toId);
+            }
+            redisCache.expire(Constants.MSG_DELETE_CALIPERS_CACHE + fromId + ":" + toId,30,TimeUnit.MINUTES);
+            if(msgDeleteCalipers.getTime() == 0){
+                return null;
+            }
+            return msgDeleteCalipers;
+        }catch (Exception e){
+            e.printStackTrace();
+            return getMsgDeleteCalipers(fromId,toId);
         }
-        redisCache.expire(Constants.MSG_DELETE_CALIPERS_CACHE + fromId + ":" + toId,30,TimeUnit.MINUTES);
-        if(msgDeleteCalipers.getTime() == 0){
-            return null;
-        }
-        return msgDeleteCalipers;
     }
 
     public MsgDeleteCalipers refresh(String fromId, String toId){
@@ -52,6 +59,11 @@ public class MsgDeleteCalipersCache {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private MsgDeleteCalipers getMsgDeleteCalipers(String fromId, String toId){
+        return  mongoTemplate.findOne(new Query(Criteria.where("userName").is(fromId)
+                .and("contacts").is(toId)), MsgDeleteCalipers.class);
     }
 
 }

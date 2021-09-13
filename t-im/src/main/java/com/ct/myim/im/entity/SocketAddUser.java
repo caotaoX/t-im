@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 
-@Document(value = "socket_add_user" )
+@Document(value = "im_socket_add_user" )
 public class SocketAddUser {
 
     @Id

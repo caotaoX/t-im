@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  * 消息查看标记
  */
-@Document(value = "msg_look_calipers" )
+@Document(value = "im_msg_look_calipers" )
 public class MsgLookCalipers {
 
     @Id

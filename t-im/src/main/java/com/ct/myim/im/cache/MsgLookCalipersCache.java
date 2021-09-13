@@ -42,14 +42,19 @@ public class MsgLookCalipersCache {
     }
 
     public MsgLookCalipers getMsgLookCalipersCache(String fromId, String toId){
-        MsgLookCalipers msgLookCalipers = redisCache.getCacheObject(Constants.MSG_LOOK_CALIPERS_CACHE + fromId + ":" + toId);
-        if(msgLookCalipers == null){
-            msgLookCalipers = refresh(fromId,toId);
+        try {
+            MsgLookCalipers msgLookCalipers = redisCache.getCacheObject(Constants.MSG_LOOK_CALIPERS_CACHE + fromId + ":" + toId);
+            if(msgLookCalipers == null){
+                msgLookCalipers = refresh(fromId,toId);
+            }
+            if(msgLookCalipers.getTime() == 0){
+                return null;
+            }
+            return msgLookCalipers;
+        }catch (Exception e){
+            e.printStackTrace();
+            return getMsgLookCalipers(fromId, toId);
         }
-        if(msgLookCalipers.getTime() == 0){
-            return null;
-        }
-        return msgLookCalipers;
     }
 
     public MsgLookCalipers refresh(String fromId, String toId){
@@ -66,5 +71,10 @@ public class MsgLookCalipersCache {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private MsgLookCalipers getMsgLookCalipers(String fromId, String toId){
+        return  mongoTemplate.findOne(new Query(Criteria.where("userName").is(fromId)
+                .and("contacts").is(toId)), MsgLookCalipers.class);
     }
 }
