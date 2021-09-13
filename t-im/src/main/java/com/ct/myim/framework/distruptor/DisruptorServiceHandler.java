@@ -15,6 +15,9 @@ import com.lmax.disruptor.WorkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 /**
  * 队列任务分配器
  * @author CAOTAO
@@ -41,6 +44,7 @@ public class DisruptorServiceHandler implements WorkHandler<BaseEvent> {
             if(message != null){
                 sockeMsg.setMessage(JSON.toJavaObject(message, SocketMessage.class));
                 sockeMsg.getMessage().setFromUser(JSON.toJavaObject(message.getJSONObject("fromUser"), FromUser.class));
+                sockeMsg.getMessage().setSendTime(LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
             }
             if(MsgType.PRIVATE_CHAT == sockeMsg.getHttpType()){
                 personalMsgHandler.send(sockeMsg);
