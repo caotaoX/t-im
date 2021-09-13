@@ -302,18 +302,15 @@ public class UserService {
         Query query = new Query();
         query.addCriteria(Criteria.where("userName").is(id));
         if (!all) {
-            PageRequest pageRequest = new PageRequest(0, 12, new Sort(Sort.Direction.DESC, "time"));
+            PageRequest pageRequest = new PageRequest(0, 12, new Sort(Sort.Direction.ASC, "time"));
             query.with(pageRequest);
         } else {
             if(StrUtil.isNotBlank(searchValue)){
-                Criteria criteria3 = new Criteria();
                 Pattern pattern = Pattern.compile("^.*" + searchValue + ".*$", Pattern.CASE_INSENSITIVE);
                 Criteria criteria = Criteria.where("contactsUserName").regex(pattern);
-                Criteria criteria2 = Criteria.where("contactsUserName").regex(pattern);
-                criteria3.orOperator(criteria, criteria2);
-                query.addCriteria(criteria3);
+                query.addCriteria(criteria);
             }
-            PageRequest pageRequest = new PageRequest(0, Integer.MAX_VALUE, new Sort(Sort.Direction.DESC, "time"));
+            PageRequest pageRequest = new PageRequest(0, Integer.MAX_VALUE, new Sort(Sort.Direction.ASC, "time"));
             query.with(pageRequest);
         }
         List<ContactsUser> userList = mongoTemplate.find(query, ContactsUser.class);

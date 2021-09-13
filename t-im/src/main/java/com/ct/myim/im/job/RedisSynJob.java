@@ -7,6 +7,7 @@ import com.ct.myim.im.entity.MsgLookCalipers;
 import com.ct.myim.sockent.manager.WsClientManager;
 import io.netty.channel.Channel;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -30,7 +31,6 @@ public class RedisSynJob {
 
     @Resource
     private MongoTemplate mongoTemplate;
-
 
     @Scheduled(cron = "0 0 2 * * ?")
     public void synMsgLookCalipers() {
