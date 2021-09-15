@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  * 漫游消息删除标记
  */
-@Document(value = "im_msg_delete_calipers" )
+@Document(value = "msg_delete_calipers" )
 public class MsgDeleteCalipers {
 
     @Id

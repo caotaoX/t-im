@@ -6,6 +6,7 @@ import com.ct.myim.common.constant.MsgType;
 import com.ct.myim.common.utils.IdUtils;
 import com.ct.myim.framework.redis.TokenService;
 import com.ct.myim.im.cache.ContactsUserCache;
+import com.ct.myim.im.cache.UserCache;
 import com.ct.myim.im.entity.*;
 import com.ct.myim.sockent.manager.WsClientManager;
 import io.netty.channel.Channel;
@@ -33,19 +34,20 @@ public class NoticeService {
     @Resource
     private MongoTemplate mongoTemplate;
     @Resource
-    private TokenService tokenService;
-    @Resource
     private MsgService msgService;
     @Resource
     private ContactsUserCache contactsUserCache;
+    @Resource
+    private UserCache userCache;
 
 
     /**
-     *通知新增联系人
+     * 通知新增联系人
+     *
      * @param toUserName  通知谁
      * @param addUserName 新增谁
      */
-    public void appendContact(String toUserName,String addUserName) {
+    public void appendContact(String toUserName, String addUserName) {
         Channel channel = WsClientManager.getInstance().getChannel(toUserName);
         if (channel != null && channel.isActive()) {
             SocketMsg socketMsg = new SocketMsg();
@@ -53,76 +55,81 @@ public class NoticeService {
             socketMsg.setHttpType(MsgType.NOTICE_ADD_USER);
             User userOne = userService.getUserByuserName(addUserName);
             Dict dict = new Dict();
-            dict.set("id",userOne.getUserName());
-            dict.set("displayName",userOne.getNickName());
-            dict.set("avatar",userOne.getAvatar());
-            dict.set("index",userOne.getIndex());
-            if(userOne.isGroup()){
-                dict.set("isGroup",userOne.isGroup());
-                dict.set("root",userOne.getRoot());
+            dict.set("id", userOne.getUserName());
+            dict.set("displayName", userOne.getNickName());
+            dict.set("avatar", userOne.getAvatar());
+            dict.set("index", userOne.getIndex());
+            if (userOne.isGroup()) {
+                dict.set("isGroup", userOne.isGroup());
+                dict.set("root", userOne.getRoot());
             }
             socketMsg.setContent(JSON.toJSONString(dict));
-            WsClientManager.getInstance().sendMsg(toUserName,JSON.toJSONString(socketMsg));
+            WsClientManager.getInstance().sendMsg(toUserName, JSON.toJSONString(socketMsg));
         }
     }
 
     /**
-     *通知删除联系人
+     * 通知删除联系人
+     *
      * @param toUserName
      * @param deleteUserName
      */
-    public void removeContact(String toUserName,String deleteUserName){
+    public void removeContact(String toUserName, String deleteUserName) {
         Channel channel = WsClientManager.getInstance().getChannel(toUserName);
         if (channel != null && channel.isActive()) {
             SocketMsg socketMsg = new SocketMsg();
             socketMsg.setId(IdUtils.fastSimpleUUID());
             socketMsg.setHttpType(MsgType.NOTICE_DELETE_USER);
             socketMsg.setContent(deleteUserName);
-            WsClientManager.getInstance().sendMsg(toUserName,JSON.toJSONString(socketMsg));
+            WsClientManager.getInstance().sendMsg(toUserName, JSON.toJSONString(socketMsg));
         }
     }
 
     /**
-     *通知更新联系人
+     * 通知更新联系人
+     *
      * @param updateUserName
      */
-    public void updateContact(String updateUserName){
-            User user = userService.getUserByuserName(updateUserName);
-            Dict dict = new Dict();
-            dict.set("id",user.getUserName());
-            dict.set("displayName",user.getNickName());
-            dict.set("avatar",user.getAvatar());
-            dict.set("index",user.getIndex());
-            if(user.isGroup()){
-                dict.set("isGroup",user.isGroup());
-                dict.set("root",user.getRoot());
-            }
-            List<ContactsUser> list = contactsUserCache.getContactsUserCache(user.getUserName());
-            for (ContactsUser contactsUser : list) {
-                Channel channel = WsClientManager.getInstance().getChannel(contactsUser.getContactsUserName());
-                if(channel != null && channel.isActive()){
-                    SocketMsg socketMsg = new SocketMsg();
-                    socketMsg.setId(IdUtils.fastSimpleUUID());
-                    socketMsg.setHttpType(MsgType.UPDATE_USER);
-                    int i = msgService.getMsgSize(contactsUser.getContactsUserName(),user.getUserName(),user.isGroup());
-                    dict.set("unread",i);
-                    SocketMsg socketMsgs = msgService.getMsgLastSendTimeOrLastContent(contactsUser.getContactsUserName(), user.getUserName(),user.isGroup());
-                    if(socketMsgs != null){
-                        dict.set("lastSendTime",socketMsgs.getSendTime());
-                        dict.set("lastContent",socketMsgs.getContent());
-                    }
-                    socketMsg.setContent(JSON.toJSONString(dict));
-                    WsClientManager.getInstance().sendMsg(contactsUser.getContactsUserName(),JSON.toJSONString(socketMsg));
+    public void updateContact(String updateUserName) {
+        userCache.deleteUserCache(updateUserName);
+        User user = userService.getUserByuserName(updateUserName);
+        Dict dict = new Dict();
+        dict.set("id", user.getUserName());
+        dict.set("displayName", user.getNickName());
+        dict.set("avatar", user.getAvatar());
+        dict.set("index", user.getIndex());
+        dict.set("online", true);
+        if (user.isGroup()) {
+            dict.set("isGroup", user.isGroup());
+            dict.set("root", user.getRoot());
+        }
+        List<ContactsUser> list = contactsUserCache.getContactsUserCache(user.getUserName());
+        for (ContactsUser contactsUser : list) {
+            Channel channel = WsClientManager.getInstance().getChannel(contactsUser.getContactsUserName());
+            if (channel != null && channel.isActive()) {
+                SocketMsg socketMsg = new SocketMsg();
+                socketMsg.setId(IdUtils.fastSimpleUUID());
+                socketMsg.setHttpType(MsgType.UPDATE_USER);
+                int i = msgService.getMsgSize(contactsUser.getContactsUserName(), user.getUserName(), user.isGroup());
+                dict.set("unread", i);
+                SocketMsg socketMsgs = msgService.getMsgLastSendTimeOrLastContent(contactsUser.getContactsUserName(), user.getUserName(), user.isGroup());
+                if (socketMsgs != null) {
+                    dict.set("lastSendTime", socketMsgs.getSendTime());
+                    dict.set("lastContent", socketMsgs.getContent());
                 }
+                socketMsg.setContent(JSON.toJSONString(dict));
+                WsClientManager.getInstance().sendMsg(contactsUser.getContactsUserName(), JSON.toJSONString(socketMsg));
+            }
         }
     }
 
     /**
      * 系统通知
+     *
      * @param toUserName
-     * @param msg 通知内容
+     * @param msg        通知内容
      */
-    public void systemNotification(String toUserName,String msg){
+    public void systemNotification(String toUserName, String msg) {
         //通知被添加人
         SocketMsg socketMsg = new SocketMsg();
         socketMsg.setMsgId(IdUtils.fastSimpleUUID());
@@ -146,53 +153,55 @@ public class NoticeService {
         socketMsg.setMessage(message);
         socketMsg.setHttpType(MsgType.PRIVATE_CHAT);
         Channel channel = WsClientManager.getInstance().getChannel(toUserName);
-        if(channel != null && channel.isActive()){
-            WsClientManager.getInstance().sendMsg(socketMsg.getMessage().getToContactId(),JSON.toJSONString(socketMsg));
+        if (channel != null && channel.isActive()) {
+            WsClientManager.getInstance().sendMsg(socketMsg.getMessage().getToContactId(), JSON.toJSONString(socketMsg));
         }
         mongoTemplate.insert(socketMsg);
     }
 
     /**
-     *  通知已登录用户退出登录
+     * 通知已登录用户退出登录
      */
-    public void outLogin(String userName){
+    public void outLogin(String userName) {
         Channel channel = WsClientManager.getInstance().getChannel(userName);
         if (channel != null && channel.isActive()) {
             SocketMsg socketMsg = new SocketMsg();
             socketMsg.setId(IdUtils.fastSimpleUUID());
             socketMsg.setHttpType(MsgType.NOTICE_OUT_LOGIN);
-            WsClientManager.getInstance().sendMsg(userName,JSON.toJSONString(socketMsg));
+            WsClientManager.getInstance().sendMsg(userName, JSON.toJSONString(socketMsg));
         }
     }
 
 
     /**
      * 通知删除消息
+     *
      * @param id
      */
-    public void removeMessage(String userName, String id){
+    public void removeMessage(String userName, String id) {
         Channel channel = WsClientManager.getInstance().getChannel(userName);
         if (channel != null && channel.isActive()) {
             SocketMsg socketMsg = new SocketMsg();
             socketMsg.setId(IdUtils.fastSimpleUUID());
             socketMsg.setHttpType(MsgType.NOTICE_DELETE_MSG);
             socketMsg.setContent(id);
-            WsClientManager.getInstance().sendMsg(userName,JSON.toJSONString(socketMsg));
+            WsClientManager.getInstance().sendMsg(userName, JSON.toJSONString(socketMsg));
         }
     }
 
     /**
      * 通知撤销消息
+     *
      * @param id
      */
-    public void revokeMessage(String userName, String id){
+    public void revokeMessage(String userName, String id) {
         Channel channel = WsClientManager.getInstance().getChannel(userName);
         if (channel != null && channel.isActive()) {
             SocketMsg socketMsg = new SocketMsg();
             socketMsg.setId(IdUtils.fastSimpleUUID());
             socketMsg.setHttpType(MsgType.NOTICE_REVOKE_MSG);
             socketMsg.setContent(id);
-            WsClientManager.getInstance().sendMsg(userName,JSON.toJSONString(socketMsg));
+            WsClientManager.getInstance().sendMsg(userName, JSON.toJSONString(socketMsg));
         }
     }
 }

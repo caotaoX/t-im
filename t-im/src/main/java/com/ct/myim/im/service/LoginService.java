@@ -55,6 +55,7 @@ public class LoginService {
         String token = tokenService.createToken(loginUser);
         Dict dict = new Dict();
         dict.set("token",token);
+        noticeService.updateContact(one.getUserName());
         return AjaxResult.success(dict);
 
     }

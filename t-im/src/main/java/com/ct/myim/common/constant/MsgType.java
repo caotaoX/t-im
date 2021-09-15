@@ -86,6 +86,16 @@ public class MsgType {
      */
     public static final int EDIT_LOOK_MSG_RECORD = 16;
 
+    /**
+     * 发送视频信息
+     */
+    public static final int SEND_VIDE_CALL = 17;
+
+    /**
+     * 发送视频请求
+     */
+    public static final int SEND_VIDE_CALL_YES = 18;
+
 
 
 }

@@ -31,9 +31,9 @@
         <template #message-title="contact">
           <span>{{ contact.displayName }}</span>
           <small v-if="contact.id != 'admin'" class="more" @click="changeDrawer(contact, $refs.IMUI)">
-            <i v-if="!drawerVisibleShow && contact.id != 'admin'" class="el-icon-s-unfold" />
-            <i v-if="drawerVisibleShow && contact.id != 'admin'" class="el-icon-s-fold" />
-            </small>
+            <i v-if="!drawerVisibleShow && contact.id != 'admin'" class="el-icon-s-unfold"/>
+            <i v-if="drawerVisibleShow && contact.id != 'admin'" class="el-icon-s-fold"/>
+          </small>
           <br/>
         </template>
 
@@ -184,9 +184,25 @@
 
     <el-dialog title="创建群" :visible.sync="addGroupOpen" width="500px">
 
-      <CreateGroup @fatherMethod="gbAddGroupOpen" />
+      <CreateGroup @fatherMethod="gbAddGroupOpen"/>
 
     </el-dialog>
+
+
+    <el-drawer
+        title="我是标题"
+        :visible.sync="drawer"
+        :with-header="false"
+        :modal="false"
+        :size="900"
+        :close-on-press-escape="false"
+        :wrapperClosable="false"
+        :show-close="true"
+    >
+
+      <VideoCall @fatherMethod="videClose"  @sendMsg="videSendMsg" ref="videocall"  :videoMsg="videoCallMsg" ></VideoCall>
+
+    </el-drawer>
 
   </div>
 </template>
@@ -205,12 +221,14 @@ import {outLogin} from "@/api/login"
 import Push from 'push.js'
 import CreateGroup from "@/components/CreateGroup";
 import CustomDrawer from "@/components/CustomDrawer";
+import VideoCall from "@/components/VideoCall";
 
 export default {
   name: "home",
   components: {
     VueCropper,
-    CreateGroup
+    CreateGroup,
+    VideoCall
   },
   data() {
     return {
@@ -361,7 +379,15 @@ export default {
       explainVisible: false,
       // 新增组
       addGroupOpen: false,
-      drawerVisibleShow: true
+      drawerVisibleShow: true,
+
+      drawer: false,
+      videoCallMsg: 'NO',
+      peerValue: '',
+      videoUser: '',
+      videoCallTime: 0,
+      toVideoUserId: '',
+      target: 'NO'
     }
   },
   created() {
@@ -372,6 +398,25 @@ export default {
     this.IMUI = this.$refs.IMUI;
     this.getUserInfo()
     this.init()
+    this.IMUI.initEditorTools([
+      {
+        name: "emoji",
+      },
+      {
+        name: "uploadFile",
+      },
+      {
+        name: "uploadImage",
+      },
+      {
+        name: "video",
+        click: () => {
+          this.videoShow()
+        },
+        render: () => {
+          return <span>视频 </span>;
+        },
+      }])
     this.IMUI.initEmoji(emojiData);
     this.IMUI.initMenus([
           {
@@ -385,9 +430,9 @@ export default {
             title: "设置",
             unread: 0,
             renderContainer: () => {
-                return (
-                  <SystemSettings />
-                )
+              return (
+                  <SystemSettings/>
+              )
             },
             render: menu => {
               return <i class="el-icon-s-tools"/>;
@@ -441,14 +486,14 @@ export default {
         data.message.toContactId = fromId
         IMUI.appendMessage(data.message, true);
         this.notice()
-        if(contactId == data.message.fromUser.id){
+        if (contactId == data.message.fromUser.id) {
           this.editLookMsgRecord(contactId)
         }
       }
       if (data.httpType == constant.GROUP_CHAT) {
         IMUI.appendMessage(data.message, true);
         this.notice()
-        if(contactId == data.message.toContactId){
+        if (contactId == data.message.toContactId) {
           this.editLookMsgRecord(contactId)
         }
       }
@@ -473,13 +518,73 @@ export default {
       if (data.httpType == constant.OTICE_DELETE_MSG || data.httpType == constant.NOTICE_REVOKE_MSG) {
         IMUI.removeMessage(data.content)
       }
+      if (data.httpType == constant.SEND_VIDE_CALL) {
+          if(data.content == 'NO') {
+            this.peerValue = 'NO'
+            Vue.prototype.msgInfo('对方不在线')
+            return
+          }
+
+        this.$refs.videocall.updatePeerValue(data.content);
+
+      }
+      if (data.httpType == constant.SEND_VIDE_CALL_YES) {
+        let content = JSON.parse(data.content)
+        console.log(data.content)
+        if(content.type == 1) {
+          this.$confirm(content.msg, '提示', {
+            confirmButtonText: '同意',
+            cancelButtonText: '不同意',
+            type: 'warning'
+          }).then(() => {
+            let content2 = {
+              type: 2,
+            }
+            let fromId = data.toContactUserName
+            let toid = data.formUserName
+            this.toVideoUserId = toid
+            data.content = content2
+            data.formUserName = fromId
+            data.toContactUserName = toid
+            this.drawer = true
+            this.videoCallMsg = '等待联通'
+            setTimeout(() => {
+              this.$refs.videocall.updateTarget('answer');
+            }, 500);
+            this.socketSend(data)
+          }).catch(() => {
+            let content3 = {
+              type: 3,
+            }
+            let fromId = data.toContactUserName
+            let toid = data.formUserName
+            data.content = content3
+            data.formUserName = fromId
+            data.toContactUserName = toid
+            this.socketSend(data)
+          });
+        }
+        if(content.type == 2) {
+          this.drawer = true
+          this.videoCallMsg = '等待联通'
+          setTimeout(() => {
+            this.$refs.videocall.updateTarget('offer');
+          }, 500);
+
+        }
+        if(content.type == 3) {
+          Vue.prototype.msgError('对方不同意视频')
+        }
+
+
+      }
 
     },
-    notice(){
-      if(this.$store.getters.voice){
+    notice() {
+      if (this.$store.getters.voice) {
         this.audio();
       }
-      if(this.$store.getters.browserJitter){
+      if (this.$store.getters.browserJitter) {
         this.showPush()
       }
     }
@@ -733,7 +838,7 @@ export default {
         this.addFriendsOpen = true
       }
     },
-    gbAddGroupOpen(){
+    gbAddGroupOpen() {
       this.addGroupOpen = false
       this.getContactsList()
     }
@@ -782,10 +887,10 @@ export default {
       this.editLookMsgRecord(contact.id)
     },
     //申请浏览器通知权限，具体参见上面文档链接
-    notification(){
+    notification() {
       Push.Permission.request();
     },
-    showPush () {
+    showPush() {
       Push.create("新消息提醒", {
         body: '您有新的消息，请查看！',
         requireInteraction: true, // 是否显示关闭、设置按钮
@@ -805,14 +910,51 @@ export default {
         },
       });
     },
-    editLookMsgRecord(contactId){
+    editLookMsgRecord(contactId) {
       let data = {
         httpType: constant.EDIT_LOOK_MSG_RECORD,
         formUserName: this.user.id,
         toContactUserName: contactId
       }
       this.socketSend(data)
+    },
+    videoShow() {
+      let contact = this.IMUI.getCurrentContact()
+      if (contact.isGroup) {
+        Vue.prototype.msgInfo('群不支持视频')
+        return
+      }
+      if(!contact.online){
+        Vue.prototype.msgInfo('用户不在线')
+        return
+      }
+      let content = {
+        type: 1,
+        msg: '【' + this.user.name + '】邀请您视频，是否同意?'
+      }
+      let data = {
+        httpType: constant.SEND_VIDE_CALL_YES,
+        formUserName: this.user.id,
+        toContactUserName: contact.id,
+        content: content
+      }
+      this.socketSend(data)
+      this.toVideoUserId = contact.id
+      Vue.prototype.msgInfo('等待对方同意')
+    },
+    videClose(){
+      this.drawer = false
+    },
+    videSendMsg(v){
+      let data = {
+        httpType: constant.SEND_VIDE_CALL,
+        formUserName: this.user.id,
+        toContactUserName: this.toVideoUserId,
+        content: v
+      }
+      this.socketSend(data)
     }
+
   }
 }
 </script>
@@ -1128,4 +1270,6 @@ label#switch-label:active:after {
   border-radius: 4px;
   min-height: 36px;
 }
+
+
 </style>

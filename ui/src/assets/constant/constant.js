@@ -24,6 +24,9 @@ export default {
     // 通知撤销消息
     NOTICE_REVOKE_MSG: 15,
     // 修改消息查看标识
-    EDIT_LOOK_MSG_RECORD: 16
+    EDIT_LOOK_MSG_RECORD: 16,
+     // 发送视频信息
+    SEND_VIDE_CALL: 17,
+    SEND_VIDE_CALL_YES: 18
 
 }

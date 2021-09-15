@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  *网络请求消息对象
  */
-@Document(value = "im_socket_msg" )
+@Document(value = "socket_msg" )
 public class SocketMsg {
 
     @Id

@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 
-@Document(value = "im_sys_user" )
+@Document(value = "sys_user" )
 public class User {
 
     /**

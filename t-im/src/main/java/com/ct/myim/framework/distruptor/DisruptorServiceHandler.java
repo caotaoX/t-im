@@ -11,6 +11,7 @@ import com.ct.myim.im.entity.SocketMsg;
 import com.ct.myim.im.handler.EditLookMsgHandler;
 import com.ct.myim.im.handler.GroupMsgHandler;
 import com.ct.myim.im.handler.PersonalMsgHandler;
+import com.ct.myim.im.handler.VideoCallHandler;
 import com.lmax.disruptor.WorkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,8 @@ public class DisruptorServiceHandler implements WorkHandler<BaseEvent> {
 
     private EditLookMsgHandler editLookMsgHandler = SpringUtils.getBean(EditLookMsgHandler.class);
 
+    private VideoCallHandler videoCallHandler = SpringUtils.getBean(VideoCallHandler.class);
+
     @Override
     public void onEvent(BaseEvent baseEvent)  {
         try {
@@ -54,6 +57,12 @@ public class DisruptorServiceHandler implements WorkHandler<BaseEvent> {
             }
             if(MsgType.EDIT_LOOK_MSG_RECORD == sockeMsg.getHttpType()){
                 editLookMsgHandler.edit(sockeMsg);
+            }
+            if(MsgType.SEND_VIDE_CALL == sockeMsg.getHttpType()){
+                videoCallHandler.send(sockeMsg);
+            }
+            if(MsgType.SEND_VIDE_CALL_YES == sockeMsg.getHttpType()){
+                videoCallHandler.inquiry(sockeMsg);
             }
         } catch (Exception e) {
             logger.error("Disruptor事件执行异常", e);

@@ -2,7 +2,7 @@ package com.ct.myim.im.entity;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(value = "im_socket_file" )
+@Document(value = "socket_file" )
 public class SocketFile {
 
     private String id;

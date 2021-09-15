@@ -10,6 +10,8 @@ import com.ct.myim.im.cache.ContactsUserCache;
 import com.ct.myim.im.cache.MsgDeleteCalipersCache;
 import com.ct.myim.im.cache.MsgLookCalipersCache;
 import com.ct.myim.im.entity.*;
+import com.ct.myim.sockent.manager.WsClientManager;
+import io.netty.channel.Channel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -179,6 +181,12 @@ public class MsgService {
             dict.set("avatar", user.getAvatar());
             dict.set("index", user.getIndex());
             dict.set("isGroup", user.isGroup());
+            Channel channel = WsClientManager.getInstance().getChannel(user.getUserName());
+            if(channel != null && channel.isActive()){
+                dict.set("online",true);
+            } else {
+                dict.set("online",false);
+            }
             if (user.isGroup()) {
                 dict.set("root", user.getRoot());
             }
@@ -223,28 +231,6 @@ public class MsgService {
         return AjaxResult.success();
     }
 
-    /**
-     * 修改消息查看记录
-     *
-     * @param userName 联系人或群userName
-     * @return
-     */
-//    public void editLookMsgRecord(String userName,String contactId) {
-////        User user = userService.getUserByuserName(userName);
-////        MsgLookCalipers calipers = mongoTemplate.findOne(new Query(Criteria.where("userName").is(user.getUserName())
-////                .and("contacts").is(contactId)), MsgLookCalipers.class);
-////        if (calipers == null) {
-////            MsgLookCalipers msgLookCalipers = new MsgLookCalipers();
-////            msgLookCalipers.setUserName(user.getUserName());
-////            msgLookCalipers.setContacts(contactId);
-////            msgLookCalipers.setTime(LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
-////            mongoTemplate.insert(msgLookCalipers);
-////        } else {
-////            Update update = new Update();
-////            update.set("time", LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli());
-////            mongoTemplate.updateFirst(new Query(Criteria.where("id").is(calipers.getId())), update, MsgLookCalipers.class);
-////        }
-//    }
 
     public AjaxResult deleteMsg(String contactId, String msgId) {
         Update update = new Update();
