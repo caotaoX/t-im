@@ -27,6 +27,11 @@ export default {
     EDIT_LOOK_MSG_RECORD: 16,
      // 发送视频信息
     SEND_VIDE_CALL: 17,
-    SEND_VIDE_CALL_YES: 18
+    // 发送视频请求
+    SEND_VIDE_CALL_YES: 18,
+    // 发送共享屏幕请求
+    RECORDING_SCREEN_YES: 19,
+    // 发送视频信息
+    SEND_RECORDING_SCREEN: 20
 
 }

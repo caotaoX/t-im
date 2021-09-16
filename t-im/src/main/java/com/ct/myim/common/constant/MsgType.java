@@ -96,6 +96,17 @@ public class MsgType {
      */
     public static final int SEND_VIDE_CALL_YES = 18;
 
+    /**
+     * 发送共享屏幕请求
+     */
+    public static final int RECORDING_SCREEN_YES = 19;
+
+    /**
+     * 发送视频信息
+     */
+    public static final int SEND_RECORDING_SCREEN = 20;
+
+
 
 
 }

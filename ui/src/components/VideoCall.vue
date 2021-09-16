@@ -104,7 +104,7 @@ export default {
         this.message.log('创建接收方（应答）SDP');
         const answer = await this.peer.createAnswer();
         this.message.log(`传输接收方（应答）SDP`);
-        this.socket.send(JSON.stringify(answer));
+        this.$emit('sendMsg', JSON.stringify(answer));
         await this.peer.setLocalDescription(answer);
       }
     },

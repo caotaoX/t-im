@@ -58,10 +58,10 @@ public class DisruptorServiceHandler implements WorkHandler<BaseEvent> {
             if(MsgType.EDIT_LOOK_MSG_RECORD == sockeMsg.getHttpType()){
                 editLookMsgHandler.edit(sockeMsg);
             }
-            if(MsgType.SEND_VIDE_CALL == sockeMsg.getHttpType()){
+            if(MsgType.SEND_VIDE_CALL == sockeMsg.getHttpType() || MsgType.SEND_RECORDING_SCREEN == sockeMsg.getHttpType()){
                 videoCallHandler.send(sockeMsg);
             }
-            if(MsgType.SEND_VIDE_CALL_YES == sockeMsg.getHttpType()){
+            if(MsgType.SEND_VIDE_CALL_YES == sockeMsg.getHttpType() || MsgType.RECORDING_SCREEN_YES == sockeMsg.getHttpType()){
                 videoCallHandler.inquiry(sockeMsg);
             }
         } catch (Exception e) {

@@ -27,7 +27,6 @@ public class VideoCallHandler {
         if(channel != null && channel.isActive()){
             WsClientManager.getInstance().sendMsg(sockeMsg.getToContactUserName(), JSON.toJSONString(sockeMsg));
         } else {
-            sockeMsg.setContent("NO");
             WsClientManager.getInstance().sendMsg(sockeMsg.getFormUserName(),JSON.toJSONString(sockeMsg));
         }
 

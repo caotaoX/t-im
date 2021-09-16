@@ -18,6 +18,11 @@ const routes = [
     name: "Home",
     component: () => import( "@/views/Home"),
   },
+  {
+    path: '/lp',
+    name: "Lm",
+    component: () => import( "@/views/Lp"),
+  },
 ];
 
 const router = new VueRouter({

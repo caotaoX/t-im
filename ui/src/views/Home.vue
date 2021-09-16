@@ -190,7 +190,7 @@
 
 
     <el-drawer
-        title="我是标题"
+        title="视频通话"
         :visible.sync="drawer"
         :with-header="false"
         :modal="false"
@@ -199,11 +199,17 @@
         :wrapperClosable="false"
         :show-close="true"
     >
-
       <VideoCall @fatherMethod="videClose"  @sendMsg="videSendMsg" ref="videocall"  :videoMsg="videoCallMsg" ></VideoCall>
-
     </el-drawer>
 
+      <div v-if="status" class="container">
+        <section>
+          <button class="media-btn" @click="clicks()" title="点击开始录制">{{ txt }}</button>
+        </section>
+      </div>
+      <div v-if="statusV" class="remotevideo-wz">
+        <video ref="remote-video" id="remote-video"></video>
+      </div>
   </div>
 </template>
 
@@ -387,7 +393,12 @@ export default {
       videoUser: '',
       videoCallTime: 0,
       toVideoUserId: '',
-      target: 'NO'
+      target: 'NO',
+      remoteVideo: undefined,
+      txt: "停止共享屏幕",
+      status: false,
+      statusV: false,
+      stream: null,
     }
   },
   created() {
@@ -416,7 +427,17 @@ export default {
         render: () => {
           return <span>视频 </span>;
         },
-      }])
+      },
+      {
+        name: "recording",
+        click: () => {
+          this.recordingShow()
+        },
+        render: () => {
+          return <span>共享屏幕</span>;
+        },
+      }
+      ])
     this.IMUI.initEmoji(emojiData);
     this.IMUI.initMenus([
           {
@@ -439,8 +460,7 @@ export default {
             },
             isBottom: true,
           }
-        ]
-    )
+        ])
   },
   methods: {
     init: function () {
@@ -524,9 +544,7 @@ export default {
             Vue.prototype.msgInfo('对方不在线')
             return
           }
-
         this.$refs.videocall.updatePeerValue(data.content);
-
       }
       if (data.httpType == constant.SEND_VIDE_CALL_YES) {
         let content = JSON.parse(data.content)
@@ -578,7 +596,61 @@ export default {
 
 
       }
+      if (data.httpType == constant.RECORDING_SCREEN_YES) {
+        let content = JSON.parse(data.content)
+        console.log(data.content)
+        if(content.type == 1) {
+          this.$confirm(content.msg, '提示', {
+            confirmButtonText: '同意',
+            cancelButtonText: '不同意',
+            type: 'warning'
+          }).then(() => {
+            let content2 = {
+              type: 2,
+            }
+            let fromId = data.toContactUserName
+            let toid = data.formUserName
+            this.toVideoUserId = toid
+            data.content = content2
+            data.formUserName = fromId
+            data.toContactUserName = toid
+            this.target = 'answer'
+            this.statusV = true
+            setTimeout(() => {
+              this.initRemoteVideo()
+              this.socketSend(data)
+            }, 1000);
+          }).catch(() => {
+            let content3 = {
+              type: 3,
+            }
+            let fromId = data.toContactUserName
+            let toid = data.formUserName
+            data.content = content3
+            data.formUserName = fromId
+            data.toContactUserName = toid
+            this.socketSend(data)
+          });
+        }
+        if(content.type == 2) {
+          this.target = 'offer'
+          this.status = true
+          this.statusV = true
+          setTimeout(() => {
+            this.initRemoteVideo()
+            this.startScreen()
+          }, 1000);
 
+        }
+        if(content.type == 3) {
+          Vue.prototype.msgError('对方不接受')
+        }
+
+
+      }
+      if (data.httpType == constant.SEND_RECORDING_SCREEN) {
+        this.updatePeerValue(data.content);
+      }
     },
     notice() {
       if (this.$store.getters.voice) {
@@ -953,8 +1025,140 @@ export default {
         content: v
       }
       this.socketSend(data)
-    }
+    },
+    clicks() {
+      if (this.status) {
+        this.stopReset();
+        this.status = false;
+        this.statusV = false
+      } else {
+        this.startScreen();
+      }
+    },
+    initRemoteVideo(){
+      this.remoteVideo = document.querySelector('#remote-video');
+      this.remoteVideo.onloadeddata = () => {
+        this.remoteVideo.play();
+      }
+      const PeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+      !PeerConnection && console.error('浏览器不支持WebRTC！');
+      this.peer = new PeerConnection();
+        this.peer.ontrack = e => {
+          console.log(e)
+          if (e && e.streams) {
+            this.remoteVideo.srcObject = e.streams[0];
+          }
+      }
+      this.peer.onicecandidate = e => {
+        if (e.candidate) {
+          let data = JSON.stringify({
+            type: this.target + '_ice',
+            iceCandiddate: e.candidate
+          });
+         this.sendRemoteVideo(data)
+        }
+      };
+    },
+    sendRemoteVideo(v){
+      let data = {
+        httpType: constant.SEND_RECORDING_SCREEN,
+        formUserName: this.user.id,
+        toContactUserName: this.toVideoUserId,
+        content: v
+      }
+      this.socketSend(data)
+    },
+    stopReset() {
+      this.stream.getTracks().forEach((track) => track.stop());
+      this.status = false
+      this.statusV = false
+    },
+    async startScreen(offerSdp) {
+      if (!offerSdp) {
+        navigator.mediaDevices.getDisplayMedia({video: true, audio: true}).then(
+            (stream) => {
+              this.stream = stream
+              if(this.target == 'offer') {
+                this.remoteVideo.srcObject = this.stream;
+              }
+              stream.getTracks().forEach(track => {
+                this.peer.addTrack(track, stream);
+              });
+            },
+            (error) => console.log(error)
+        );
 
+        // this.stream = await navigator.mediaDevices.getDisplayMedia({video: true});
+        // if(this.target == 'offer') {
+        //   this.remoteVideo.srcObject = this.stream;
+        // }
+
+        console.log('创建本地SDP');
+        const offer = await this.peer.createOffer();
+        await this.peer.setLocalDescription(offer);
+        console.log(`传输发起方本地SDP`);
+        this.sendRemoteVideo(JSON.stringify(offer))
+      } else {
+        console.log('接收到发送方SDP');
+        await this.peer.setRemoteDescription(offerSdp);
+        console.log('创建接收方（应答）SDP');
+        const answer = await this.peer.createAnswer();
+        console.log(`传输接收方（应答）SDP`);
+        this.sendRemoteVideo(JSON.stringify(answer))
+        await this.peer.setLocalDescription(answer);
+      }
+
+    },
+    updatePeerValue(v){
+      if (v != null && v != '' && v != undefined) {
+        const {type, sdp, iceCandidate} = JSON.parse(v)
+        if (type === 'answer') {
+          console.log('answer')
+          this.peer.setRemoteDescription(new RTCSessionDescription({type, sdp}));
+        } else if (type === 'answer_ice') {
+          console.log('answer_ice')
+          this.peer.addIceCandidate(iceCandidate);
+        } else if (type === 'offer') {
+          console.log('offer')
+          this.startScreen(new RTCSessionDescription({type, sdp}));
+        } else if (type === 'offer_ice') {
+          console.log('offer_ice')
+          this.peer.addIceCandidate(iceCandidate);
+        }
+      }
+
+    },
+    recordingShow(){
+      let contact = this.IMUI.getCurrentContact()
+      if (contact.isGroup) {
+        Vue.prototype.msgInfo('群不支持共享屏幕')
+        return
+      }
+      if(!contact.online){
+        Vue.prototype.msgInfo('用户不在线')
+        return
+      }
+      let content = {
+        type: 1,
+        msg: '【' + this.user.name + '】邀请您接受投屏，是否同意?'
+      }
+      let data = {
+        httpType: constant.RECORDING_SCREEN_YES,
+        formUserName: this.user.id,
+        toContactUserName: contact.id,
+        content: content
+      }
+      this.socketSend(data)
+      this.toVideoUserId = contact.id
+      Vue.prototype.msgInfo('等待对方同意')
+      // this.status = true
+      // this.statusV = true
+      // setTimeout(() => {
+      //   this.initRemoteVideo()
+      // }, 1000);
+      // this.startScreen()
+      // this.initRemoteVideo()
+    }
   }
 }
 </script>
@@ -1271,5 +1475,59 @@ label#switch-label:active:after {
   min-height: 36px;
 }
 
+.container {
+  position: absolute;
+  left: 5px;
+  top: 50px;
+  width: 100px;
+  height: 250px;
+}
+
+.remotevideo-wz{
+  position: absolute;
+  text-align right
+  right: 5px;
+  bottom: 5px;
+}
+
+#remote-video {
+  width: 300px;
+  height: 200px;
+  display: block;
+  object-fit: cover;
+  border: 1px solid #eee;
+  background-color: #F2F6FC;
+}
+.item .unit {
+  margin-left: 10px;
+}
+
+.item input {
+  height: 30px;
+  padding: 1px;
+  padding-left: 5px;
+}
+
+.item input[type="text"] {
+  width: 180px;
+}
+
+.item input[type="number"] {
+  width: 80px;
+}
+
+.media-btn {
+  background: rgb(146, 224, 214);
+  border: none;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 800;
+  outline: none;
+}
+
+.media-btn:hover {
+  background: rgb(155, 235, 224);
+}
 
 </style>
