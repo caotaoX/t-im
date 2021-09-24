@@ -28,7 +28,7 @@ public class MyMvcConfig implements WebMvcConfigurer {
                 //静态资源在springboot2.0以前已经做好映射，不用管
                 //  /**指任意范围都通过拦截
                 registry.addInterceptor(new LoginHandlerInterceptor()).addPathPatterns("/**")
-                .excludePathPatterns("/user/registerUser","/login","/file/getFile");
+                .excludePathPatterns("/user/registerUser","/login","/file/getFile","/video/0");
         //       asserts为resources下static下的文件夹，webjars则是maven导入的一些前端框架
             }
             

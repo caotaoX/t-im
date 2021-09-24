@@ -199,17 +199,17 @@
         :wrapperClosable="false"
         :show-close="true"
     >
-      <VideoCall @fatherMethod="videClose"  @sendMsg="videSendMsg" ref="videocall"  :videoMsg="videoCallMsg" ></VideoCall>
+      <VideoCall @fatherMethod="videClose" @sendMsg="videSendMsg" ref="videocall" :videoMsg="videoCallMsg"></VideoCall>
     </el-drawer>
 
-      <div v-if="status" class="container">
-        <section>
-          <button class="media-btn" @click="clicks()" title="点击开始录制">{{ txt }}</button>
-        </section>
-      </div>
-      <div v-if="statusV" class="remotevideo-wz">
-        <video ref="remote-video" id="remote-video"></video>
-      </div>
+    <div v-if="status" class="container">
+      <section>
+        <button class="media-btn" @click="clicks()" title="点击开始录制">{{ txt }}</button>
+      </section>
+    </div>
+    <div v-if="statusV" class="remotevideo-wz">
+      <video ref="remote-video" id="remote-video"></video>
+    </div>
   </div>
 </template>
 
@@ -228,6 +228,7 @@ import Push from 'push.js'
 import CreateGroup from "@/components/CreateGroup";
 import CustomDrawer from "@/components/CustomDrawer";
 import VideoCall from "@/components/VideoCall";
+import VideoLook from "@/components/VideoLook";
 
 export default {
   name: "home",
@@ -437,30 +438,44 @@ export default {
           return <span>共享屏幕</span>;
         },
       }
-      ])
+    ])
     this.IMUI.initEmoji(emojiData);
     this.IMUI.initMenus([
-          {
-            name: "messages",
-          },
-          {
-            name: "contacts",
-          },
-          {
-            name: "setUp",
-            title: "设置",
-            unread: 0,
-            renderContainer: () => {
-              return (
-                  <SystemSettings/>
-              )
-            },
-            render: menu => {
-              return <i class="el-icon-s-tools"/>;
-            },
-            isBottom: true,
-          }
-        ])
+      {
+        name: "messages",
+      },
+      {
+        name: "contacts",
+      },
+      {
+        name: "video",
+        title: "视频",
+        unread: 0,
+        renderContainer: () => {
+          return (
+              <VideoLook/>
+          )
+        },
+        render: menu => {
+          return <i class="el-icon-video-camera"/>;
+        },
+        isBottom: true,
+      },
+      {
+        name: "setUp",
+        title: "设置",
+        unread: 0,
+        renderContainer: () => {
+          return (
+              <SystemSettings/>
+          )
+        },
+        render: menu => {
+          return <i class="el-icon-s-tools"/>;
+        },
+        isBottom: true,
+      }
+    ])
   },
   methods: {
     init: function () {
@@ -539,17 +554,17 @@ export default {
         IMUI.removeMessage(data.content)
       }
       if (data.httpType == constant.SEND_VIDE_CALL) {
-          if(data.content == 'NO') {
-            this.peerValue = 'NO'
-            Vue.prototype.msgInfo('对方不在线')
-            return
-          }
+        if (data.content == 'NO') {
+          this.peerValue = 'NO'
+          Vue.prototype.msgInfo('对方不在线')
+          return
+        }
         this.$refs.videocall.updatePeerValue(data.content);
       }
       if (data.httpType == constant.SEND_VIDE_CALL_YES) {
         let content = JSON.parse(data.content)
         console.log(data.content)
-        if(content.type == 1) {
+        if (content.type == 1) {
           this.$confirm(content.msg, '提示', {
             confirmButtonText: '同意',
             cancelButtonText: '不同意',
@@ -582,7 +597,7 @@ export default {
             this.socketSend(data)
           });
         }
-        if(content.type == 2) {
+        if (content.type == 2) {
           this.drawer = true
           this.videoCallMsg = '等待联通'
           setTimeout(() => {
@@ -590,7 +605,7 @@ export default {
           }, 500);
 
         }
-        if(content.type == 3) {
+        if (content.type == 3) {
           Vue.prototype.msgError('对方不同意视频')
         }
 
@@ -599,7 +614,7 @@ export default {
       if (data.httpType == constant.RECORDING_SCREEN_YES) {
         let content = JSON.parse(data.content)
         console.log(data.content)
-        if(content.type == 1) {
+        if (content.type == 1) {
           this.$confirm(content.msg, '提示', {
             confirmButtonText: '同意',
             cancelButtonText: '不同意',
@@ -632,7 +647,7 @@ export default {
             this.socketSend(data)
           });
         }
-        if(content.type == 2) {
+        if (content.type == 2) {
           this.target = 'offer'
           this.status = true
           this.statusV = true
@@ -642,7 +657,7 @@ export default {
           }, 1000);
 
         }
-        if(content.type == 3) {
+        if (content.type == 3) {
           Vue.prototype.msgError('对方不接受')
         }
 
@@ -991,12 +1006,14 @@ export default {
       this.socketSend(data)
     },
     videoShow() {
+      Vue.prototype.msgInfo('非HTTPS无法体验')
+      return
       let contact = this.IMUI.getCurrentContact()
       if (contact.isGroup) {
         Vue.prototype.msgInfo('群不支持视频')
         return
       }
-      if(!contact.online){
+      if (!contact.online) {
         Vue.prototype.msgInfo('用户不在线')
         return
       }
@@ -1014,10 +1031,10 @@ export default {
       this.toVideoUserId = contact.id
       Vue.prototype.msgInfo('等待对方同意')
     },
-    videClose(){
+    videClose() {
       this.drawer = false
     },
-    videSendMsg(v){
+    videSendMsg(v) {
       let data = {
         httpType: constant.SEND_VIDE_CALL,
         formUserName: this.user.id,
@@ -1035,7 +1052,7 @@ export default {
         this.startScreen();
       }
     },
-    initRemoteVideo(){
+    initRemoteVideo() {
       this.remoteVideo = document.querySelector('#remote-video');
       this.remoteVideo.onloadeddata = () => {
         this.remoteVideo.play();
@@ -1043,11 +1060,11 @@ export default {
       const PeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
       !PeerConnection && console.error('浏览器不支持WebRTC！');
       this.peer = new PeerConnection();
-        this.peer.ontrack = e => {
-          console.log(e)
-          if (e && e.streams) {
-            this.remoteVideo.srcObject = e.streams[0];
-          }
+      this.peer.ontrack = e => {
+        console.log(e)
+        if (e && e.streams) {
+          this.remoteVideo.srcObject = e.streams[0];
+        }
       }
       this.peer.onicecandidate = e => {
         if (e.candidate) {
@@ -1055,11 +1072,11 @@ export default {
             type: this.target + '_ice',
             iceCandiddate: e.candidate
           });
-         this.sendRemoteVideo(data)
+          this.sendRemoteVideo(data)
         }
       };
     },
-    sendRemoteVideo(v){
+    sendRemoteVideo(v) {
       let data = {
         httpType: constant.SEND_RECORDING_SCREEN,
         formUserName: this.user.id,
@@ -1078,7 +1095,7 @@ export default {
         navigator.mediaDevices.getDisplayMedia({video: true, audio: true}).then(
             (stream) => {
               this.stream = stream
-              if(this.target == 'offer') {
+              if (this.target == 'offer') {
                 this.remoteVideo.srcObject = this.stream;
               }
               stream.getTracks().forEach(track => {
@@ -1109,7 +1126,7 @@ export default {
       }
 
     },
-    updatePeerValue(v){
+    updatePeerValue(v) {
       if (v != null && v != '' && v != undefined) {
         const {type, sdp, iceCandidate} = JSON.parse(v)
         if (type === 'answer') {
@@ -1128,13 +1145,15 @@ export default {
       }
 
     },
-    recordingShow(){
+    recordingShow() {
+      Vue.prototype.msgInfo('非HTTPS无法体验')
+      return
       let contact = this.IMUI.getCurrentContact()
       if (contact.isGroup) {
         Vue.prototype.msgInfo('群不支持共享屏幕')
         return
       }
-      if(!contact.online){
+      if (!contact.online) {
         Vue.prototype.msgInfo('用户不在线')
         return
       }
@@ -1483,7 +1502,7 @@ label#switch-label:active:after {
   height: 250px;
 }
 
-.remotevideo-wz{
+.remotevideo-wz {
   position: absolute;
   text-align right
   right: 5px;
@@ -1498,6 +1517,7 @@ label#switch-label:active:after {
   border: 1px solid #eee;
   background-color: #F2F6FC;
 }
+
 .item .unit {
   margin-left: 10px;
 }

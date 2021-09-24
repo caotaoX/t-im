@@ -1,4 +1,5 @@
 export default {
+    HTTP_IP_PROT: process.env.VUE_APP_BASE_API,
     SOCKTE_IP_PROT: process.env.VUE_APP_BASE_SOCKET,
     //私聊
     PRIVATE_CHAT: 1,

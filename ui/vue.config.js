@@ -27,7 +27,6 @@ module.exports = {
   productionSourceMap: false,
   devServer: {
     disableHostCheck: true,
-    https: true
   },
   configureWebpack: {
     name: name,

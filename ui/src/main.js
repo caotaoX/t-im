@@ -10,6 +10,7 @@ import 'lemon-imui/dist/index.css';
 import FriendLog from "@/components/FriendLog"
 import SystemSettings from "@/components/SystemSettings";
 import CustomDrawer from "@/components/CustomDrawer";
+import VideoLook from "@/components/VideoLook";
 
 Vue.prototype.msgSuccess = function (msg) {
   this.$message({ showClose: true, message: msg, type: "success" });
@@ -26,6 +27,8 @@ Vue.prototype.msgInfo = function (msg) {
 Vue.component('FriendLog',FriendLog)
 Vue.component("SystemSettings",SystemSettings)
 Vue.component("CustomDrawer",CustomDrawer)
+Vue.component("VideoLook",VideoLook)
+
 
 Vue.config.productionTip = false
 Vue.use(LemonIMUI);
