@@ -197,6 +197,8 @@ public class MsgService {
                 if (socketMsg != null) {
                     dict.set("lastSendTime", socketMsg.getSendTime());
                     dict.set("lastContent", socketMsg.getMessage().getContent());
+                    dict.set("type", socketMsg.getMessage().getType());
+
                 }
             } else {
                 dict.set("unread", 0);

@@ -231,7 +231,7 @@ import VideoCall from "@/components/VideoCall";
 import VideoLook from "@/components/VideoLook";
 
 export default {
-  name: "home",
+  name: "Computer",
   components: {
     VueCropper,
     CreateGroup,

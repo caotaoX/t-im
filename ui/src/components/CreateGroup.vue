@@ -111,6 +111,7 @@ export default {
         ],
         name: [
           {required: true, trigger: "blur", message: "群名称不能为空"},
+          {max: 12, message: "长度在12位以下", trigger: "blur"},
         ],
       },
     }

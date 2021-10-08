@@ -97,6 +97,7 @@ export default {
         ],
         nickName: [
           {required: true, trigger: "blur", message: "名称不能为空"},
+          {max: 12, message: "长度在12位以下", trigger: "blur"},
         ],
         password: [
           {required: true, trigger: "blur", message: "密码不能为空"}
@@ -115,7 +116,7 @@ export default {
           this.loading = true;
           this.store
           this.$store.dispatch("Login", this.loginForm).then(() => {
-            this.$router.push('/home');
+            this.$router.push('/redirect');
           }).catch(() => {
             this.loading = false;
           });

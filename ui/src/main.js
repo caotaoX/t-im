@@ -11,6 +11,8 @@ import FriendLog from "@/components/FriendLog"
 import SystemSettings from "@/components/SystemSettings";
 import CustomDrawer from "@/components/CustomDrawer";
 import VideoLook from "@/components/VideoLook";
+import Vant from 'vant'
+import 'vant/lib/index.css'
 
 Vue.prototype.msgSuccess = function (msg) {
   this.$message({ showClose: true, message: msg, type: "success" });
@@ -29,10 +31,15 @@ Vue.component("SystemSettings",SystemSettings)
 Vue.component("CustomDrawer",CustomDrawer)
 Vue.component("VideoLook",VideoLook)
 
+import 'vue-awesome/icons'
+import Icon from 'vue-awesome/components/Icon';
+// 全局注册图标
+Vue.component('Awesome-icon', Icon);
 
 Vue.config.productionTip = false
 Vue.use(LemonIMUI);
 Vue.use(ElementUI);
+Vue.use(Vant);
 
 new Vue({
   router,

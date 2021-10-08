@@ -14,9 +14,19 @@ const routes = [
     component: () => import( "@/views/Login"),
   },
   {
-    path: '/home',
-    name: "Home",
-    component: () => import( "@/views/Home"),
+    path: '/redirect',
+    name: "Redirect",
+    component: () => import( "@/views/redirect"),
+  },
+  {
+    path: '/mobile',
+    name: "Mobile",
+    component: () => import( "@/views/Mobile"),
+  },
+  {
+    path: '/computer',
+    name: "Computer",
+    component: () => import( "@/views/Computer"),
   },
   {
     path: '/lp',
