@@ -16,6 +16,11 @@ gitee:  https://gitee.com/ct_1466909669/t-im <br>
     后端代码和表都是按照自己理解设计的，有兴趣的朋友们可以借鉴一下，哈哈哈，因为白天要上班，做的比较快，代码有地方是
     不严谨的，有些权限上的问题。
 
+# 部署
+    1、拉取项目，安装mongodb、redis，修改配置文件。
+    2、将default文件夹放到配置文件 file.upload.abspath.prefix= 配置路径/default。
+    3、前端安装npm,cmd下cd到ui目录,执行 npm install下拉依赖，启动前端。
+
 体验地址：http://49.7.129.239:4100 <br><br>
 现有功能；
 - 单点登录
